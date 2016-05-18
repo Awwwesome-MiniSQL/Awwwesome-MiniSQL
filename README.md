@@ -14,6 +14,7 @@ Note that all SQL statements should **END WITH `;`** and **key words should be l
 create table tableName (attrA int, attrB float unique, attrC char(20), primary key(attrX));
 drop table tableName;
 ```
+
 * create / drop index
 ```sql
 create index indexName on tableName(attrName);
