@@ -10,31 +10,35 @@ MiniSQL supports the following data types for an attribute:
 MiniSQL supports the following standard SQL statements.  
 Note that all SQL statements should **END WITH `;`** and **key words should be lowercase**.
 * create / drop table  
-``` sql
+```sql
 create table tableName (attrA int, attrB float unique, attrC char(20), primary key(attrX));
 drop table tableName;
 ```
 * create / drop index
-``` sql
+```sql
 create index indexName on tableName(attrName);
 drop index indexName;
 ```
+
 * select
-``` sql
+```sql
 select attrA, attrB from tableName where attrC = X;
 select * from tableName;
 ```
+
 * insert
-``` sql
+```sql
 insert into tableName (attrA, attrB, attrC) values (valueA, valueB, valueC);
 ```
+
 * delete
-``` sql
+```sql
 delete from tableName where attrA >= X and attrB < Y;
 ```
 * quit
+
 * import SQL file
-``` sql
+```sql
 source fileName.sql
 ```
 
