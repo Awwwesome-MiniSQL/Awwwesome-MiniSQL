@@ -109,9 +109,11 @@ off_t AllocSize(BPlusTree tree, size_t size)
 int Insert(BPlusTree tree, my_key_t key, value_t value)
 {
     off_t parent, offset;
-    leaf_t leaf;
+    leaf_t leaf, newLeaf;
+    internal_t tmpInternal;
     record_t tmpRecord;
-    int i, leafChildrenNum, compareRes;
+    off_t newOffset;
+    int i, j, leafChildrenNum, compareRes;
     parent = SearchIndex(tree, key);
     offset = SearchLeaf(tree, parent, key);
     ReadIndexBlock(tree, &leaf, offset, sizeof(leaf_t));
@@ -135,21 +137,38 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
     if (leaf.n < tree->meta.order)
     {
         // do insertion sort
-        while (i >= 0 && KeyCmp(leaf.children[i].key, tmpRecord.key) > 0)
-        {
-            leaf.children[i + 1] = leaf.children[i];
-            i--;
-        }
+
         leaf.children[i + 1] = tmpRecord;
         leaf.n++;
         // write back
         WriteIndexBlock(tree, &leaf, offset, sizeof(leaf_t));
     }
     // case 2: Oops, we have to spilt the tree
-    else
+    else  // leaf.n == tree->meta.order
     {
-        // @TODO
-        return 0;
+        newOffset = AllocLeaf(tree, &newLeaf);
+        newLeaf.parent = leaf.parent;
+        newLeaf.next = leaf.next;
+        leaf.next = newOffset;
+        newLeaf.prev = offset;
+        // copy the right half of children of leaf to new leaf
+        for (i = (int)leaf.n / 2, j = 0; i < (int)leaf.n; i++, j++)
+        {
+            newLeaf.children[j] = leaf.children[i];
+        }
+        newLeaf.n = leaf.n - leaf.n / 2;
+        leaf.n = leaf.n / 2;
+        WriteIndexBlock(tree, &newLeaf, offset, sizeof(leaf_t));
+        ReadIndexBlock(tree, &tmpInternal, offset, sizeof(leaf_t));
+        if (tmpInternal.n < tree->meta.order)  // case 2.1, new key in parent fits
+        {
+            // do insertion sort again
+            // @TODO
+            while (1)
+            {
+
+            }
+        }
     }
     return 0;
 }
@@ -169,4 +188,16 @@ int SearchLeaf(BPlusTree tree, off_t parent, my_key_t key)
 int KeyCmp(my_key_t A, my_key_t B)
 {
     return strcmp(A.key, B.key);
+}
+
+void InsertIntoLeaf(leaf_t *leaf, record_t *newRecord)
+{
+    int i;
+    i = leaf->n;
+    while (i >= 0 && KeyCmp(leaf->children[i].key, newRecord->key) > 0)
+    {
+        leaf->children[i + 1] = leaf->children[i];
+        i--;
+    }
+
 }
