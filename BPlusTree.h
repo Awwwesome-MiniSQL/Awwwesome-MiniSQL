@@ -97,6 +97,8 @@ int Search(BPlusTree tree, my_key_t key, value_t *value);
 int SearchIndex(BPlusTree tree, my_key_t key);
 int SearchLeaf(BPlusTree tree, off_t parent, my_key_t key);
 int KeyCmp(my_key_t A, my_key_t B);
+void InsertIntoLeaf(leaf_t *leaf, record_t *newRecord);
+void InsertIntoInternal();
 // Remove
 int Remove(BPlusTree tree, my_key_t key);
 // Update is equivalent to Remove + Insert
