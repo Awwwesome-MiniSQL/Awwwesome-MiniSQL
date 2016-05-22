@@ -6,7 +6,8 @@
 #include <stdio.h>
 #define Tree_ORDER  100
 
-int ReadBlock(FILE *fp, off_t offset);
+// @NOTE here we need to invoke Buffer module to read / write blocks
+int ReadBlock(FILE *fp, void *block, off_t offset, size_t size);
 int WriteBlock(FILE *fp, void *block, off_t offset, size_t size);
 typedef int value_t;  // value type, default int
 typedef struct my_key_t my_key_t;  // key type, default int
