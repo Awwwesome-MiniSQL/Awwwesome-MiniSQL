@@ -111,7 +111,7 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
     off_t parent, offset;
     leaf_t leaf, newLeaf;
     internal_t tmpInternal;
-    record_t tmpRecord;
+    record_t tmpRecord, swapRecord;
     off_t newOffset;
     int i, j, leafChildrenNum, compareRes;
     parent = SearchIndex(tree, key);
@@ -133,17 +133,15 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
             break;
         }
     }
-    // case 1: no need to spilt
+    // case 1: no need to split
     if (leaf.n < tree->meta.order)
     {
         // do insertion sort
-
-        leaf.children[i + 1] = tmpRecord;
-        leaf.n++;
+        InsertIntoLeaf(&leaf, &tmpRecord);
         // write back
         WriteIndexBlock(tree, &leaf, offset, sizeof(leaf_t));
     }
-    // case 2: Oops, we have to spilt the tree
+    // case 2: Oops, we have to split the tree
     else  // leaf.n == tree->meta.order
     {
         newOffset = AllocLeaf(tree, &newLeaf);
@@ -151,24 +149,38 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
         newLeaf.next = leaf.next;
         leaf.next = newOffset;
         newLeaf.prev = offset;
-        // copy the right half of children of leaf to new leaf
-        for (i = (int)leaf.n / 2, j = 0; i < (int)leaf.n; i++, j++)
-        {
-            newLeaf.children[j] = leaf.children[i];
-        }
-        newLeaf.n = leaf.n - leaf.n / 2;
-        leaf.n = leaf.n / 2;
-        WriteIndexBlock(tree, &newLeaf, offset, sizeof(leaf_t));
-        ReadIndexBlock(tree, &tmpInternal, offset, sizeof(leaf_t));
         if (tmpInternal.n < tree->meta.order)  // case 2.1, new key in parent fits
         {
-            // do insertion sort again
-            // @TODO
+            // let swapRecord be the largest one
+            if (KeyCmp(leaf.children[leaf.n].key, tmpRecord.key) > 0)
+            {
+                // swap
+                swapRecord = leaf.children[leaf.n];
+                leaf.n--;
+                InsertIntoLeaf(&leaf, &tmpRecord);
+            }
+            else  // tmpRecord is the largest one
+            {
+                swapRecord = tmpRecord;
+            }
+            // copy the right half of children of leaf to new leaf
+            for (i = (int)leaf.n / 2, j = 0; i < (int)leaf.n; i++, j++)
+            {
+                newLeaf.children[j] = leaf.children[i];
+            }
+            newLeaf.children[j] = swapRecord;
+            newLeaf.n = j + 1;
+            leaf.n = leaf.n / 2;
+            WriteIndexBlock(tree, &leaf, offset, sizeof(leaf_t));
+            WriteIndexBlock(tree, &newLeaf, offset, sizeof(leaf_t));
+            // @TODO why here ReadIndexBlock?
+            ReadIndexBlock(tree, &tmpInternal, offset, sizeof(leaf_t));
             while (1)
             {
 
             }
         }
+
     }
     return 0;
 }
@@ -199,5 +211,6 @@ void InsertIntoLeaf(leaf_t *leaf, record_t *newRecord)
         leaf->children[i + 1] = leaf->children[i];
         i--;
     }
-
+    leaf->children[i + 1] = *newRecord;
+    leaf->n++;
 }
