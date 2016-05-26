@@ -149,6 +149,7 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
         newLeaf.next = leaf.next;
         leaf.next = newOffset;
         newLeaf.prev = offset;
+        ReadIndexBlock(tree, &tmpInternal, offset, sizeof(internal_t));
         if (tmpInternal.n < tree->meta.order)  // case 2.1, new key in parent fits
         {
             // let swapRecord be the largest one
@@ -173,8 +174,7 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
             leaf.n = leaf.n / 2;
             WriteIndexBlock(tree, &leaf, offset, sizeof(leaf_t));
             WriteIndexBlock(tree, &newLeaf, offset, sizeof(leaf_t));
-            // @TODO why here ReadIndexBlock?
-            ReadIndexBlock(tree, &tmpInternal, offset, sizeof(leaf_t));
+            // @TODO we need to
             while (1)
             {
 
