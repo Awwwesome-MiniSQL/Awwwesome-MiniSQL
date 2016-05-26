@@ -11,8 +11,8 @@
 #define SIZE_NO_CHILDREN sizeof(leaf_t) + TREE_ORDER * sizeof(record_t)
 // ===================================================================================
 // @NOTE here we need to invoke Buffer module to read / write blocks
-int ReadBlock(FILE *fp, void *block, off_t offset, size_t size);
-int WriteBlock(FILE *fp, void *block, off_t offset, size_t size);
+void *ReadBlock(char *fileName, off_t offset, size_t size);  // return a pointer which points to a block in memory
+int WriteBlock(char *fileName, void *block, off_t offset, size_t size);  // return 1 if succeeded or 0 if not
 // ===================================================================================
 // key and value definition
 typedef float value_t;  // value type, default int
@@ -75,17 +75,19 @@ struct meta_t
 typedef struct tree_t *BPlusTree;
 struct tree_t
 {
-    FILE *fp;  // multi-level file handling
-    int fpLevel; // the level of current file, to avoid open for many times
+    //FILE *fp;  // multi-level file handling
+    //int fpLevel; // the level of current file, to avoid open for many times
     char path[1024];  // path to the index file
     meta_t meta;  // meta data
 };
 
 // block read / write
+/* not used any more
 void OpenFile(BPlusTree tree);
 void CloseFile(BPlusTree tree);
 int ReadIndexBlock(BPlusTree tree, void *block, off_t offset, size_t size);
 int WriteIndexBlock(BPlusTree tree, void *block, off_t offset, size_t size);
+*/
 // initialize tree
 void InitTree(BPlusTree tree);
 off_t AllocLeaf(BPlusTree tree, leaf_t *node);
@@ -98,7 +100,7 @@ int SearchIndex(BPlusTree tree, my_key_t key);
 int SearchLeaf(BPlusTree tree, off_t parent, my_key_t key);
 int KeyCmp(my_key_t A, my_key_t B);
 void InsertIntoLeaf(leaf_t *leaf, record_t *newRecord);
-void InsertIntoInternal();
+void InsertIntoInternal(internal_t *internal, index_t index);
 // Remove
 int Remove(BPlusTree tree, my_key_t key);
 // Update is equivalent to Remove + Insert
