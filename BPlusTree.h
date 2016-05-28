@@ -103,7 +103,5 @@ void InsertIntoLeaf(leaf_t *leaf, record_t *newRecord);
 void InsertIntoInternal(internal_t *internal, index_t index);
 // Remove
 int Remove(BPlusTree tree, my_key_t key);
-// Update is equivalent to Remove + Insert
-int Update(BPlusTree tree, my_key_t key, value_t value);
 
 #endif
