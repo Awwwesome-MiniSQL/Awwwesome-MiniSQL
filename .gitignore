@@ -1,1 +1,4 @@
 *.h.gch
+*.o
+*.db
+test

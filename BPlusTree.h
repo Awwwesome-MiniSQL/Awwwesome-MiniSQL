@@ -1,5 +1,6 @@
 #ifndef BPLUSTREE_H
 #define BPLUSTREE_H
+#define NOBUFFER
 #include "MiniSQL.h"
 #include <stddef.h>
 #include <stdlib.h>
