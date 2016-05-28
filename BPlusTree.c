@@ -71,7 +71,7 @@ int WriteIndexBlock(BPlusTree tree, void *block, off_t offset, size_t size)
 */
 //======================= show time =======================
 // initialize tree
-void InitTree(BPlusTree tree, char *path)
+void InitTree(BPlusTree tree, char *path, enum DataType type)
 {
     internal_t root;
     leaf_t leaf;
@@ -91,6 +91,7 @@ void InitTree(BPlusTree tree, char *path)
     leaf.next = leaf.prev = 0;
     leaf.parent = tree->meta.rootOffset;
     tree->meta.leafOffset = root.children[0].child = AllocLeaf(tree, &leaf);
+    tree->meta.type = type;
     // write back to buffer
     WriteBlock(tree->path, &tree->meta, META_OFFSET, BLOCK_SIZE);
     WriteBlock(tree->path, &root, tree->meta.rootOffset, BLOCK_SIZE);
@@ -300,7 +301,23 @@ off_t SearchLeaf(BPlusTree tree, off_t parent, my_key_t key)
     return offset;
 }
 
-int KeyCmp(my_key_t A, my_key_t B)
+int IntKeyCmp(my_key_t A, my_key_t B)
+{
+    return A.key - B.key;
+}
+int FloatKeyCmp(my_key_t A, my_key_t B)
+{
+    if (A.key < B.key)
+    {
+        return -1;
+    }
+    else if (A.key == B.key)
+    {
+        return 0;
+    }
+    else return 1;
+}
+int StringKeyCmp(my_key_t A, my_key_t B)
 {
     return strcmp(A.key, B.key);
 }
