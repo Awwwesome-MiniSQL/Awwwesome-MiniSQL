@@ -1,13 +1,13 @@
 #ifndef BPLUSTREE_H
 #define BPLUSTREE_H
-
+#include "MiniSQL.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 // the following definition of offsets might be replaced in the real work
-#define TREE_ORDER  10
+#define TREE_ORDER  (BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t)
 #define META_OFFSET 0  // this means one file contains exactly one tree, and the beginning of a file is the meta data
-#define BLOCK_OFFSET META_OFFSET + sizeof(meta_t)
+#define BLOCK_OFFSET META_OFFSET + BLOCK_SIZE
 #define SIZE_NO_CHILDREN sizeof(leaf_t) + TREE_ORDER * sizeof(record_t)
 // ===================================================================================
 // @NOTE here we need to invoke Buffer module to read / write blocks
@@ -15,7 +15,7 @@ void *ReadBlock(char *fileName, off_t offset, size_t size);  // return a pointer
 int WriteBlock(char *fileName, void *block, off_t offset, size_t size);  // return 1 if succeeded or 0 if not
 // ===================================================================================
 // key and value definition
-typedef unsigned int value_t;  // value type, default int
+typedef off_t value_t;  // value type, default int
 typedef struct my_key_t my_key_t;  // key type (int, float, varchar)
 struct my_key_t
 {

@@ -1,5 +1,6 @@
 #include <string.h>
 #include "BPlusTree.h"
+#include "MiniSQL.h"
 #define DEBUG
 // ======================= buffer read and write =======================
 // ReadBlock and WriteBlock functions are provided by Buffer module
@@ -27,7 +28,7 @@ int WriteBlock(char *fileName, void *block, off_t offset, size_t size)
     int ret;
     fp = fopen(fileName, "rb+");
     fseek(fp, offset, SEEK_SET);
-    ret = fwrite(block, size, 1, fp);
+    ret = fwrite(block, BLOCK_SIZE, 1, fp);
     fclose(fp);
     return ret;
 }
@@ -91,9 +92,9 @@ void InitTree(BPlusTree tree, char *path)
     leaf.parent = tree->meta.rootOffset;
     tree->meta.leafOffset = root.children[0].child = AllocLeaf(tree, &leaf);
     // write back to buffer
-    WriteBlock(tree->path, &tree->meta, META_OFFSET, sizeof(meta_t));
-    WriteBlock(tree->path, &root, tree->meta.rootOffset, sizeof(internal_t));
-    WriteBlock(tree->path, &leaf, tree->meta.leafOffset, sizeof(leaf_t));
+    WriteBlock(tree->path, &tree->meta, META_OFFSET, BLOCK_SIZE);
+    WriteBlock(tree->path, &root, tree->meta.rootOffset, BLOCK_SIZE);
+    WriteBlock(tree->path, &leaf, tree->meta.leafOffset, BLOCK_SIZE);
 }
 
 off_t AllocLeaf(BPlusTree tree, leaf_t *node)
@@ -101,8 +102,11 @@ off_t AllocLeaf(BPlusTree tree, leaf_t *node)
     off_t slot;
     node->n = 0;
     tree->meta.leafNum++;
-    tree->meta.slot += sizeof(leaf_t);
     slot = tree->meta.slot;
+    tree->meta.slot += BLOCK_SIZE;
+#ifdef DEBUG
+    printf("slot: %ld\n", slot);
+#endif
     return slot;
 }
 
@@ -112,7 +116,7 @@ off_t AllocInternal(BPlusTree tree, internal_t *node)
     node->n = 1;
     tree->meta.internalNum++;
     slot = tree->meta.slot;
-    tree->meta.slot += sizeof(internal_t);
+    tree->meta.slot += BLOCK_SIZE;
     return slot;
 }
 
@@ -190,7 +194,7 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
         newLeaf.children[j] = swapRecord;
         newLeaf.n = leaf->n / 2 + 1;
         leaf->n += 1 - newLeaf.n;
-        WriteBlock(tree->path, &leaf, offset, sizeof(leaf_t));
+        WriteBlock(tree->path, leaf, offset, sizeof(leaf_t));
         WriteBlock(tree->path, &newLeaf, newLeafOffset, sizeof(leaf_t));
         // @TODO split recursively
         // we need to insert newIndex into tmpInternal

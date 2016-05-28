@@ -9,7 +9,7 @@ int main()
     FILE *fp;
     meta_t *meta;
     leaf_t *leaf;
-    internal_t *internal;
+    //internal_t *internal;
     my_key_t newKey;
     struct tree_t tree;
     char fileName[1024];
@@ -27,6 +27,6 @@ int main()
     Insert(&tree, newKey, 0x12345678);
     leaf = (leaf_t *)ReadBlock(fileName, meta->leafOffset, sizeof(leaf_t));
     printf("leaf data:\n");
-    printf("leaf->parent: %ld\nleaf->next: %ld\nleaf->prev: %ld\nleaf->n: %ld\nleaf->children[0].value: %u\nleaf->children[0].key.key: %s\n", leaf->parent, leaf->next, leaf->prev, leaf->n, leaf->children[0].value, leaf->children[0].key.key);
+    printf("leaf->parent: %ld\nleaf->next: %ld\nleaf->prev: %ld\nleaf->n: %ld\nleaf->children[0].value: %ld\nleaf->children[0].key.key: %s\n", leaf->parent, leaf->next, leaf->prev, leaf->n, leaf->children[0].value, leaf->children[0].key.key);
     return 0;
 }

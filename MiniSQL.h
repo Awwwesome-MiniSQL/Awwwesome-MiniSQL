@@ -1,6 +1,7 @@
 #ifndef MINISQL_H
 #define MINISQL_H
-#define MaxAttributeNum 32
+#define MAX_ATTRIBUTE_NUM 32
+#define BLOCK_SIZE 4096  // 4 KB a block
 // three types of data, int, float, and string (the size of a string is between 0 and 255)
 enum DataType{intType, floatType, stringType};
 struct AttributeRecord
@@ -16,7 +17,7 @@ typedef struct TableRecord *Table;
 struct TableRecord
 {
     char *name;
-    struct AttributeRecord attributes[MaxAttributeNum];
+    struct AttributeRecord attributes[MAX_ATTRIBUTE_NUM];
     int primaryKey;  // the index of primary key
     int recordSize;  // the size of a tuple
     int buff;  // the location of the table in the buffer
