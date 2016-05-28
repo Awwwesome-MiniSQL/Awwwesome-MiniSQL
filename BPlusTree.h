@@ -11,7 +11,7 @@
 #define META_OFFSET 0  // this means one file contains exactly one tree, and the beginning of a file is the meta data
 #define BLOCK_OFFSET META_OFFSET + BLOCK_SIZE
 #define SIZE_NO_CHILDREN sizeof(leaf_t) + TREE_ORDER * sizeof(record_t)
-#define KeyCmp(a, b) _Generic(a, int: IntKeyCmp, float: FloatKeyCmp, char *: StringKeyCmp)(a, b)
+#define KeyValueCmp(a, b) _Generic(a, int: IntKeyCmp, float: FloatKeyCmp, char *: StringKeyCmp)(a, b)
 // ===================================================================================
 // @NOTE here we need to invoke Buffer module to read / write blocks
 void *ReadBlock(char *fileName, off_t offset, size_t size);  // return a pointer which points to a block in memory
@@ -22,7 +22,9 @@ typedef off_t value_t;  // value type, default int
 typedef struct my_key_t my_key_t;  // key type (int, float, varchar)
 struct my_key_t
 {
-    char key[256];
+    int key;
+    //float key;
+    //char key[256];
     //size_t size;
 };
 
@@ -99,12 +101,13 @@ off_t AllocInternal(BPlusTree tree, internal_t *node);
 off_t AllocSize(BPlusTree tree, size_t size);
 // Insert
 int Insert(BPlusTree tree, my_key_t key, value_t value);
-int Search(BPlusTree tree, my_key_t key, value_t *value);
+int Search(BPlusTree tree, my_key_t key);
 off_t SearchIndex(BPlusTree tree, my_key_t key);
 off_t SearchLeaf(BPlusTree tree, off_t parent, my_key_t key);
-int IntKeyCmp(my_key_t A, my_key_t B);
-int FloatKeyCmp(my_key_t A, my_key_t B);
-int StringKeyCmp(my_key_t A, my_key_t B);
+int KeyCmp(my_key_t A, my_key_t B);
+int IntKeyCmp(int A, int B);
+int FloatKeyCmp(float A, float B);
+int StringKeyCmp(char *A, char *B);
 void InsertIntoLeaf(leaf_t *leaf, record_t *newRecord);
 void InsertIntoInternal(internal_t *internal, index_t index);
 // Remove

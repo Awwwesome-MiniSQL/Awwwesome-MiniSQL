@@ -1,6 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -c --std=gnu11
-LFLAGS = -Wall --std=gnu11
+CFLAGS = -Wall -c
+LFLAGS = -Wall
 DEBUG = -g
 OBJS = BPlusTree.o test.o
 OUTPUT = -o test

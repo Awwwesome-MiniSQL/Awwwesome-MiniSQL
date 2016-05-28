@@ -1,9 +1,9 @@
 #include <string.h>
 #include "BPlusTree.h"
 #include "MiniSQL.h"
-#define DEBUG
 // ======================= buffer read and write =======================
 // ReadBlock and WriteBlock functions are provided by Buffer module
+#ifdef DEBUG
 void *ReadBlock(char *fileName, off_t offset, size_t size)
 {
     void *block;
@@ -15,7 +15,7 @@ void *ReadBlock(char *fileName, off_t offset, size_t size)
     n = fread(block, size, 1, fp);  // @NOTE be careful because it must read Successfully
     if (n != 1)
     {
-        printf("failed\n");
+        printf("Failed to read block: read %d block(s), offset = %ld\n", n, offset);
         return NULL;
     }
     fclose(fp);
@@ -32,6 +32,7 @@ int WriteBlock(char *fileName, void *block, off_t offset, size_t size)
     fclose(fp);
     return ret;
 }
+#endif
 // ========================= not my work above =========================
 // This is my part
 /* not use any more
@@ -105,7 +106,7 @@ off_t AllocLeaf(BPlusTree tree, leaf_t *node)
     tree->meta.leafNum++;
     slot = tree->meta.slot;
     tree->meta.slot += BLOCK_SIZE;
-#ifdef DEBUG
+#ifndef DEBUG
     printf("slot: %ld\n", slot);
 #endif
     return slot;
@@ -141,16 +142,23 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
     int i, j, leafChildrenNum, compareRes, height;
     parent = SearchIndex(tree, key);
     offset = SearchLeaf(tree, parent, key);
+#ifdef DEBUG
+    printf("leaf offset: %ld\n", offset);
+#endif
     leaf = (leaf_t *)ReadBlock(tree->path, offset, sizeof(leaf_t));
     leafChildrenNum = leaf->n;
     tmpRecord.key = key;
     tmpRecord.value = value;
+#ifdef DEBUG
+        printf("leaf->children[%d].key.key: %d\n", 0, leaf->children[0].key.key);
+#endif
     // check whether in the tree first
     for (i = 0; i < leafChildrenNum; i++)
     {
-        compareRes = KeyCmp(leaf->children[i + 1].key, tmpRecord.key);
+        compareRes = KeyCmp(leaf->children[i].key, tmpRecord.key);
         if (compareRes == 0)  // the key is already in the tree
         {
+            printf("The key is already in the table\n");
             return 1;
         }
         if (compareRes > 0)  // compareRes > 0 means that the key does not exists because the keys in a node are in ascending order
@@ -165,6 +173,9 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
         InsertIntoLeaf(leaf, &tmpRecord);
         // write back
         WriteBlock(tree->path, leaf, offset, sizeof(leaf_t));
+#ifdef DEBUG
+        free(leaf);
+#endif
     }
     // case 2: Oops, we have to split the tree
     else  // leaf.n == tree->meta.order
@@ -174,6 +185,9 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
         newLeaf.next = leaf->next;
         leaf->next = newLeafOffset;
         newLeaf.prev = offset;
+#ifndef DEBUG
+        printf("leaf->parent: %ld\n", leaf->parent);
+#endif
         tmpInternal = (internal_t *)ReadBlock(tree->path, leaf->parent, sizeof(internal_t));  // read parent
         // let swapRecord be the largest one
         if (KeyCmp(leaf->children[leaf->n].key, tmpRecord.key) > 0)
@@ -203,6 +217,9 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
         newIndex.child = newLeafOffset;
         height = tree->meta.height - 1;  // the current level we are dealing with
         tmpInternalOffset = leaf->parent;
+#ifdef DEBUG
+        free(leaf);
+#endif
         while (height >= 0)
         {
             // fits, don't split
@@ -244,9 +261,15 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
             {
                 break;
             }
+#ifdef DEBUG
+            free(tmpInternal);
+#endif
             tmpInternal = (internal_t *)ReadBlock(tree->path, tmpInternalOffset, sizeof(internal_t));
             height--;
         }
+#ifdef DEBUG
+        free(tmpInternal);
+#endif
         if (0 == tmpInternalOffset)  // create new root
         {
             newInternalOffset = AllocInternal(tree, &newInternal);
@@ -290,36 +313,51 @@ off_t SearchLeaf(BPlusTree tree, off_t parent, my_key_t key)
     internal_t *node;
     int i;
     node = (internal_t *)ReadBlock(tree->path, parent, sizeof(internal_t));
+#ifndef DEBUG
+    printf("SearchLeaf offset: %ld, leafNum: %ld, node->n: %ld\n", offset, tree->meta.leafNum, node->n);
+#endif
     for (i = 0; i < (int)node->n; i++)
     {
+#ifndef DEBUG
+        printf("node->children[%d].key: %d, key: %d\n", i, node->children[i].key.key, key.key);
+#endif
+        offset = node->children[i].child;
         if (1 == tree->meta.leafNum || KeyCmp(node->children[i].key, key) >= 0)
         {
-            offset = node->children[i].child;
             break;
         }
     }
+#ifndef DEBUG
+    printf("SearchLeaf offset: %ld\n", offset);
+#endif
     return offset;
 }
 
-int IntKeyCmp(my_key_t A, my_key_t B)
+int KeyCmp(my_key_t A, my_key_t B)
 {
-    return A.key - B.key;
+    return KeyValueCmp(A.key, B.key);
 }
-int FloatKeyCmp(my_key_t A, my_key_t B)
+
+int IntKeyCmp(int A, int B)
 {
-    if (A.key < B.key)
+    return A - B;
+}
+int FloatKeyCmp(float  A, float B)
+{
+    if (A < B)
     {
         return -1;
     }
-    else if (A.key == B.key)
+    else if (A == B)
     {
         return 0;
     }
     else return 1;
 }
-int StringKeyCmp(my_key_t A, my_key_t B)
+
+int StringKeyCmp(char *A, char *B)
 {
-    return strcmp(A.key, B.key);
+    return strcmp(A, B);
 }
 
 void InsertIntoLeaf(leaf_t *leaf, record_t *newRecord)
@@ -338,12 +376,26 @@ void InsertIntoLeaf(leaf_t *leaf, record_t *newRecord)
 void InsertIntoInternal(internal_t *internal, index_t index)
 {
     int i;
-    i = internal->n;
+    i = internal->n - 1;
+#ifndef DEBUG
+    printf("InsertIntoInternal i: %d, index.key: %d, index.child: %ld\n", i, index.key.key, index.child);
+#endif
     while (i >= 0 && KeyCmp(internal->children[i].key, index.key) > 0)
     {
-        internal[i + 1] = internal[i];
+        internal->children[i + 1] = internal->children[i];
         i--;
     }
     internal->children[i + 1] = index;
+#ifndef DEBUG
+    printf("internal->children[%d]: %d, %ld\n", i + 1, internal->children[i + 1].key.key, internal->children[i + 1].child);
+#endif
     internal->n++;
+}
+
+int Search(BPlusTree tree, my_key_t key)
+{
+    off_t parent, offset;
+    parent = SearchIndex(tree, key);
+    offset = SearchLeaf(tree, parent, key);
+    return 0;
 }
