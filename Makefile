@@ -5,9 +5,7 @@ DEBUG = -g
 OBJS = BPlusTree.o test.o
 OUTPUT = -o test
 
-all: test
-
-test: $(OBJS)
+all: $(OBJS)
 	$(CC) $(LFLAGS) $(DEBUG) $(OBJS) $(OUTPUT)
 
 BPlusTree.o: BPlusTree.c BPlusTree.h

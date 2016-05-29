@@ -1,4 +1,5 @@
 *.h.gch
 *.o
 *.db
+*.txt
 test

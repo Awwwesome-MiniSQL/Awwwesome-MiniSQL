@@ -135,37 +135,19 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
 {
     off_t parent, offset;
     leaf_t *leaf, newLeaf;
-    internal_t *tmpInternal, newInternal;
-    record_t tmpRecord, swapRecord;
-    off_t newLeafOffset, tmpInternalOffset, newInternalOffset;
-    index_t newIndex, swapIndex;
-    int i, j, leafChildrenNum, compareRes, height;
+    internal_t *tmpInternal, newInternal, root;
+    record_t tmpRecord;
+    off_t newLeafOffset, tmpInternalOffset, newInternalOffset, newRootOffset;
+    index_t newIndex;
+    int height;
+
     parent = SearchIndex(tree, key);
     offset = SearchLeaf(tree, parent, key);
-#ifndef DEBUG
-    printf("leaf offset: %ld\n", offset);
-#endif
     leaf = (leaf_t *)ReadBlock(tree->path, offset, sizeof(leaf_t));
-    leafChildrenNum = leaf->n;
     tmpRecord.key = key;
     tmpRecord.value = value;
-#ifndef DEBUG
-        printf("leaf->children[%d].key.key: %d\n", 0, leaf->children[0].key.key);
-#endif
     // check whether in the tree first
-    for (i = 0; i < leafChildrenNum; i++)
-    {
-        compareRes = KeyCmp(leaf->children[i].key, tmpRecord.key);
-        if (compareRes == 0)  // the key is already in the tree
-        {
-            printf("The key(%d) is already in the table\n", tmpRecord.key.key);
-            return 1;
-        }
-        if (compareRes > 0)  // compareRes > 0 means that the key does not exists because the keys in a node are in ascending order
-        {
-            break;
-        }
-    }
+    SearchKeyInLeaf(key, leaf);
     // case 1: no need to split
     if (leaf->n < tree->meta.order)
     {
@@ -180,87 +162,64 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
     // case 2: Oops, we have to split the tree
     else  // leaf.n == tree->meta.order
     {
-        newLeafOffset = AllocLeaf(tree, &newLeaf);
-        newLeaf.parent = leaf->parent;
-        newLeaf.next = leaf->next;
-        leaf->next = newLeafOffset;
-        newLeaf.prev = offset;
-#ifndef DEBUG
-        printf("leaf->parent: %ld\n", leaf->parent);
-#endif
+        // create new leaf
+        newLeafOffset = CreateNewLeaf(tree, leaf, offset, &newLeaf);
         tmpInternal = (internal_t *)ReadBlock(tree->path, leaf->parent, sizeof(internal_t));  // read parent
-        // let swapRecord be the largest one
-        if (KeyCmp(leaf->children[leaf->n - 1].key, tmpRecord.key) > 0)
+        // copy the right half of a full leaf to a new leaf node
+        CopyLeaf(leaf, &newLeaf, tmpRecord);
+        // after copy, we may have to reset the index of the old leaf ndoe
+        if (0 == KeyCmp(leaf->children[0].key, tmpRecord.key))
         {
-            // swap
-            swapRecord = leaf->children[leaf->n - 1];
-            leaf->n--;
-            InsertIntoLeaf(leaf, &tmpRecord);
+            ResetIndex(tree, leaf, key);
         }
-        else  // tmpRecord is the largest one
-        {
-            swapRecord = tmpRecord;
-        }
-        // copy the right half of children of leaf to new leaf
-        for (i = (int)leaf->n / 2, j = 0; i < (int)leaf->n; i++, j++)
-        {
-            newLeaf.children[j] = leaf->children[i];
-        }
-        newLeaf.children[j] = swapRecord;
-        newLeaf.n = leaf->n / 2 + 1;
-        leaf->n += 1 - newLeaf.n;
         WriteBlock(tree->path, leaf, offset, sizeof(leaf_t));
         WriteBlock(tree->path, &newLeaf, newLeafOffset, sizeof(leaf_t));
-        // @TODO split recursively
+        // split recursively
         // we need to insert newIndex into tmpInternal
         newIndex.key = newLeaf.children[0].key;
         newIndex.child = newLeafOffset;
         height = tree->meta.height - 1;  // the current level we are dealing with
         tmpInternalOffset = leaf->parent;
+        if (1 == tmpInternal->n)  // insert the smallest one
+        {
+            tmpInternal->children[0].key = leaf->children[0].key;
+            tmpInternal->children[0].child = offset;
+        }
 #ifdef NOBUFFER
         free(leaf);
 #endif
         while (height >= 0)
         {
-            // fits, don't split
+            // fits in internal node, don't split
             if (tmpInternal->n < tree->meta.order)
             {
                 InsertIntoInternal(tmpInternal, newIndex);
                 WriteBlock(tree->path, tmpInternal, tmpInternalOffset, sizeof(internal_t));
                 break;
             }
+            // we should create a root first
+            if (0 == tmpInternal->parent)  // we reach the root node and need a new root
+            {
+                newRootOffset = CreateNewRoot(tree, &root, tmpInternal, tmpInternalOffset);
+                tmpInternal->parent = newRootOffset;
+                height++;
+            }
+            // full, split it
             newInternalOffset = AllocInternal(tree, &newInternal);
             newInternal.parent = tmpInternal->parent;
             newInternal.next = tmpInternal->next;
             newInternal.prev = tmpInternalOffset;
-            // set swapIndex = the largest index
-            if (KeyCmp(newIndex.key, tmpInternal->children[tmpInternal->n].key) > 0)
-            {
-                swapIndex = newIndex;
-            }
-            else
-            {
-                swapIndex = tmpInternal->children[tmpInternal->n];
-                tmpInternal->n--;
-                InsertIntoInternal(tmpInternal, newIndex);
-            }
-            for (i = (int)tmpInternal->n / 2, j = 0; i < (int)tmpInternal->n; i++, j++)
-            {
-                // copy the right half to the new internal node
-                newInternal.children[j] = tmpInternal->children[i];
-            }
-            newInternal.children[j] = swapIndex;
-            newInternal.n = tmpInternal->n / 2 + 1;
-            tmpInternal->n += 1 - newInternal.n;
+            CopyInternal(&newIndex, tmpInternal, &newInternal);
             WriteBlock(tree->path, tmpInternal, tmpInternalOffset, sizeof(internal_t));
             WriteBlock(tree->path, &newInternal, newInternalOffset, sizeof(internal_t));
+            // @TODO after CopyInternal, we have to reset children's parent
+            ResetIndexParent(tree, &newInternal, newInternalOffset);  // reset the children's parent as the newInternal node
             // move to the upper level
-            newIndex = newInternal.children[0];
+            // update newIndex
+            newIndex.key = newInternal.children[0].key;
+            newIndex.child = newInternalOffset;
+            // @TODO
             tmpInternalOffset = tmpInternal->parent;
-            if (0 == tmpInternalOffset)  // we reach the root node and need a new root
-            {
-                break;
-            }
 #ifdef NOBUFFER
             free(tmpInternal);
 #endif
@@ -270,15 +229,6 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
 #ifdef NOBUFFER
         free(tmpInternal);
 #endif
-        if (0 == tmpInternalOffset)  // create new root
-        {
-            newInternalOffset = AllocInternal(tree, &newInternal);
-            tree->meta.rootOffset = newInternalOffset;
-            tree->meta.height++;
-            newInternal.prev = newInternal.next = newInternal.parent = 0;
-            newInternal.children[0] = newIndex;
-            WriteBlock(tree->path, &newInternal, newInternalOffset, sizeof(internal_t));
-        }
     }  // case 2: split tree
     WriteBlock(tree->path, &tree->meta, META_OFFSET, sizeof(meta_t));  // update meta data
     return 0;
@@ -399,10 +349,140 @@ void InsertIntoInternal(internal_t *internal, index_t index)
     internal->n++;
 }
 
+/*
 int Search(BPlusTree tree, my_key_t key)
 {
     off_t parent, offset;
     parent = SearchIndex(tree, key);
     offset = SearchLeaf(tree, parent, key);
     return 0;
+}
+*/
+
+int SearchKeyInLeaf(my_key_t key, leaf_t *leaf)
+{
+    int i, compareRes;
+    for (i = 0; i < (int)leaf->n; i++)
+    {
+        compareRes = KeyCmp(leaf->children[i].key, key);
+        if (compareRes == 0)  // the key is already in the tree
+        {
+            printf("The key(%d) is already in the table\n", key.key);
+            return 1;
+        }
+        if (compareRes > 0)  // compareRes > 0 means that the key does not exists because the keys in a node are in ascending order
+        {
+            break;
+        }
+    }
+    return 0;
+}
+
+void CopyLeaf(leaf_t *leaf, leaf_t *newLeaf, record_t tmpRecord)  // copy the right half of a full leaf to a new leaf node
+{
+    int i, j;
+    record_t swapRecord;
+    if (KeyCmp(leaf->children[leaf->n - 1].key, tmpRecord.key) > 0)
+    {
+        // swap
+        swapRecord = leaf->children[leaf->n - 1];
+        leaf->n--;
+        InsertIntoLeaf(leaf, &tmpRecord);
+    }
+    else  // tmpRecord is the largest one
+    {
+        swapRecord = tmpRecord;
+    }
+    // copy the right half of children of leaf to new leaf
+    for (i = (int)leaf->n / 2 + 1, j = 0; i < (int)leaf->n; i++, j++)
+    {
+        newLeaf->children[j] = leaf->children[i];
+    }
+    newLeaf->children[j] = swapRecord;
+    newLeaf->n = leaf->n / 2 + 1;
+    leaf->n += 1 - newLeaf->n;
+}
+
+void ResetIndex(BPlusTree tree, leaf_t *leaf, my_key_t newKey)
+{
+    int i, height;
+    off_t offset;
+    internal_t *node;
+    offset = leaf->parent;
+    height = tree->meta.height - 1;
+    while (height >= 0)
+    {
+        node = (internal_t *)ReadBlock(tree->path, node, offset, sizeof(internal_t));
+        // @TODO
+        height--;
+    }
+}
+
+void CopyInternal(index_t *newIndex, internal_t *tmpInternal, internal_t *newInternal)
+{
+    int i, j;
+    index_t swapIndex;
+    if (KeyCmp(newIndex->key, tmpInternal->children[tmpInternal->n - 1].key) > 0)
+    {
+        swapIndex = *newIndex;
+    }
+    else
+    {
+        swapIndex = tmpInternal->children[tmpInternal->n - 1];
+        tmpInternal->n--;
+        InsertIntoInternal(tmpInternal, *newIndex);
+    }
+    for (i = (int)tmpInternal->n / 2 + 1, j = 0; i < (int)tmpInternal->n; i++, j++)
+    {
+        // copy the right half to the new internal node
+        newInternal->children[j] = tmpInternal->children[i];
+    }
+    newInternal->children[j] = swapIndex;
+    newInternal->n = tmpInternal->n / 2 + 1;
+    tmpInternal->n += 1 - newInternal->n;
+}
+
+off_t CreateNewLeaf(BPlusTree tree, leaf_t *leaf, off_t offset, leaf_t *newLeaf)
+{
+    off_t newLeafOffset;
+    newLeafOffset = AllocLeaf(tree, newLeaf);
+    newLeaf->parent = leaf->parent;
+    newLeaf->next = leaf->next;
+    leaf->next = newLeafOffset;
+    newLeaf->prev = offset;
+    return newLeafOffset;
+}
+
+off_t CreateNewRoot(BPlusTree tree, internal_t *root, internal_t *tmpInternal, off_t tmpInternalOffset)
+{
+    off_t newRootOffset;
+    newRootOffset = AllocInternal(tree, root);
+    tree->meta.rootOffset = newRootOffset;
+    tree->meta.height++;
+    root->prev = root->next = root->parent = 0;
+    // update children of root
+    root->children[0].key = tmpInternal->children[0].key;
+    root->children[0].child = tmpInternalOffset;
+#ifndef DEBUG
+    printf("root->children[1]: %d, %ld\n", newInternal.children[1].key.key, newInternal.children[1].child);
+#endif
+    // update root->n
+    root->n = 1;
+    WriteBlock(tree->path, root, newRootOffset, sizeof(internal_t));
+    return newRootOffset;
+}
+
+void ResetIndexParent(BPlusTree tree, internal_t *internal, off_t offset)  // reset the children's parent as the newInternal node
+{
+    int i;
+    internal_t *child;
+    off_t childOffset;
+    for (i = 0; i < (int)internal->n; i++)
+    {
+        childOffset = internal->children[i].child;
+        child = (internal_t *)ReadBlock(tree->path, childOffset, sizeof(internal_t));
+        child->parent = offset;
+        WriteBlock(tree->path, child, childOffset, BLOCK_SIZE);
+        free(child);
+    }
 }
