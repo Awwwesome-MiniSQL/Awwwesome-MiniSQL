@@ -167,11 +167,13 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
         tmpInternal = (internal_t *)ReadBlock(tree->path, leaf->parent, sizeof(internal_t));  // read parent
         // copy the right half of a full leaf to a new leaf node
         CopyLeaf(leaf, &newLeaf, tmpRecord);
+        /*
         // after copy, we may have to reset the index of the old leaf ndoe
         if (0 == KeyCmp(leaf->children[0].key, tmpRecord.key))
         {
             ResetIndex(tree, leaf, key);
         }
+        */
         WriteBlock(tree->path, leaf, offset, sizeof(leaf_t));
         WriteBlock(tree->path, &newLeaf, newLeafOffset, sizeof(leaf_t));
         // split recursively
@@ -378,6 +380,7 @@ int SearchKeyInLeaf(my_key_t key, leaf_t *leaf)
     return 0;
 }
 
+// @TODO after copy, what should be updated in the parent node
 void CopyLeaf(leaf_t *leaf, leaf_t *newLeaf, record_t tmpRecord)  // copy the right half of a full leaf to a new leaf node
 {
     int i, j;
@@ -403,6 +406,7 @@ void CopyLeaf(leaf_t *leaf, leaf_t *newLeaf, record_t tmpRecord)  // copy the ri
     leaf->n += 1 - newLeaf->n;
 }
 
+/*
 void ResetIndex(BPlusTree tree, leaf_t *leaf, my_key_t newKey)
 {
     int i, height;
@@ -417,7 +421,7 @@ void ResetIndex(BPlusTree tree, leaf_t *leaf, my_key_t newKey)
         height--;
     }
 }
-
+*/
 void CopyInternal(index_t *newIndex, internal_t *tmpInternal, internal_t *newInternal)
 {
     int i, j;
