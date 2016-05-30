@@ -167,13 +167,14 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
         tmpInternal = (internal_t *)ReadBlock(tree->path, leaf->parent, sizeof(internal_t));  // read parent
         // copy the right half of a full leaf to a new leaf node
         CopyLeaf(leaf, &newLeaf, tmpRecord);
-        /*
         // after copy, we may have to reset the index of the old leaf ndoe
+        // @NOTE patch works
         if (0 == KeyCmp(leaf->children[0].key, tmpRecord.key))
         {
-            ResetIndex(tree, leaf, key);
+            //ResetIndex(tree, leaf, key);
+            tmpInternal->children[0].key = tmpRecord.key;
+            tmpInternal->children[0].child = offset;
         }
-        */
         WriteBlock(tree->path, leaf, offset, sizeof(leaf_t));
         WriteBlock(tree->path, &newLeaf, newLeafOffset, sizeof(leaf_t));
         // split recursively
@@ -212,15 +213,18 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
             newInternal.next = tmpInternal->next;
             newInternal.prev = tmpInternalOffset;
             CopyInternal(&newIndex, tmpInternal, &newInternal);
+            if (0 == KeyCmp(tmpInternal->children[0].key, newIndex.key))
+            {
+                ResetIndexR(tree, tmpInternal, newIndex.key, tmpInternalOffset);
+            }
             WriteBlock(tree->path, tmpInternal, tmpInternalOffset, sizeof(internal_t));
             WriteBlock(tree->path, &newInternal, newInternalOffset, sizeof(internal_t));
-            // @TODO after CopyInternal, we have to reset children's parent
+            // after CopyInternal, we have to reset children's parent
             ResetIndexParent(tree, &newInternal, newInternalOffset);  // reset the children's parent as the newInternal node
             // move to the upper level
             // update newIndex
             newIndex.key = newInternal.children[0].key;
             newIndex.child = newInternalOffset;
-            // @TODO
             tmpInternalOffset = tmpInternal->parent;
 #ifdef NOBUFFER
             free(tmpInternal);
@@ -245,7 +249,7 @@ off_t SearchIndex(BPlusTree tree, my_key_t key)
     while (height > 1)
     {
         node = (internal_t *)ReadBlock(tree->path, offset, sizeof(internal_t));
-        for (i = (int)node->n - 1; i >= 0; i--)
+        for (i = (int)node->n - 1; i >= 0; i--)  // ignore the value of node->children[0]
         {
             //index = &node->children[i];
             offset = node->children[i].child;
@@ -269,14 +273,8 @@ off_t SearchLeaf(BPlusTree tree, off_t parent, my_key_t key)
     internal_t *node;
     int i;
     node = (internal_t *)ReadBlock(tree->path, parent, sizeof(internal_t));
-#ifndef DEBUG
-    printf("SearchLeaf offset: %ld, leafNum: %ld, node->n: %ld\n", offset, tree->meta.leafNum, node->n);
-#endif
     for (i = (int)node->n - 1; i >= 0; i--)
     {
-#ifndef DEBUG
-        printf("node->children[%d].key: %d, key: %d\n", i, node->children[i].key.key, key.key);
-#endif
         offset = node->children[i].child;
         if (1 == tree->meta.leafNum || KeyCmp(node->children[i].key, key) <= 0)
         {
@@ -285,9 +283,6 @@ off_t SearchLeaf(BPlusTree tree, off_t parent, my_key_t key)
     }
 #ifdef NOBUFFER
     free(node);
-#endif
-#ifndef DEBUG
-    printf("SearchLeaf offset: %ld\n", offset);
 #endif
     return offset;
 }
@@ -336,19 +331,20 @@ void InsertIntoInternal(internal_t *internal, index_t index)
 {
     int i;
     i = internal->n - 1;
-#ifndef DEBUG
-    printf("InsertIntoInternal i: %d, index.key: %d, index.child: %ld\n", i, index.key.key, index.child);
-#endif
     while (i >= 0 && KeyCmp(internal->children[i].key, index.key) > 0)
     {
         internal->children[i + 1] = internal->children[i];
         i--;
     }
     internal->children[i + 1] = index;
-#ifndef DEBUG
-    printf("internal->children[%d]: %d, %ld\n", i + 1, internal->children[i + 1].key.key, internal->children[i + 1].child);
-#endif
     internal->n++;
+#ifdef DEBUG
+    printf("After insert %d\n", index.key.key);
+    for (i = 0; i < (int)internal->n; i++)
+    {
+        printf("internal->children[%d]: %d, %ld\n", i, internal->children[i].key.key, internal->children[i].child);
+    }
+#endif
 }
 
 /*
@@ -406,22 +402,32 @@ void CopyLeaf(leaf_t *leaf, leaf_t *newLeaf, record_t tmpRecord)  // copy the ri
     leaf->n += 1 - newLeaf->n;
 }
 
-/*
-void ResetIndex(BPlusTree tree, leaf_t *leaf, my_key_t newKey)
+
+void ResetIndexR(BPlusTree tree, internal_t *tmpInternal, my_key_t key, off_t offset)
 {
-    int i, height;
-    off_t offset;
+    int i;
+    index_t newIndex;
+    off_t parent;
     internal_t *node;
-    offset = leaf->parent;
-    height = tree->meta.height - 1;
-    while (height >= 0)
+    newIndex.key = key;
+    newIndex.child = offset;
+    parent = tmpInternal->parent;
+    while (parent)
     {
-        node = (internal_t *)ReadBlock(tree->path, node, offset, sizeof(internal_t));
-        // @TODO
-        height--;
+        node = (internal_t *)ReadBlock(tree->path, parent, sizeof(internal_t));
+        for (i = 0; i < (int)node->n; i++)
+        {
+            if (node->children[i].child == newIndex.child)
+            {
+                node->children[i] = newIndex;
+                break;
+            }
+        }
+        WriteBlock(tree->path, node, parent, sizeof(internal_t));
+        parent = node->parent;
     }
 }
-*/
+
 void CopyInternal(index_t *newIndex, internal_t *tmpInternal, internal_t *newInternal)
 {
     int i, j;

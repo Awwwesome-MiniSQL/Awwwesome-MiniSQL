@@ -110,7 +110,7 @@ void CopyLeaf(leaf_t *leaf, leaf_t *newLeaf, record_t tmpRecord);  // copy the r
 void CopyInternal(index_t *newIndex, internal_t *tmpInternal, internal_t *newInternal);  // copy the rignt half of a full internal to a new one
 off_t CreateNewLeaf(BPlusTree tree, leaf_t *leaf, off_t offset, leaf_t *newLeaf);
 off_t CreateNewRoot(BPlusTree tree, internal_t *root, internal_t *tmpInternal, off_t tmpInternalOffset);
-void ResetIndex(BPlusTree tree, leaf_t *leaf, my_key_t newKey);
+void ResetIndexR(BPlusTree tree, internal_t *tmpInternal, my_key_t key, off_t offset);
 void ResetIndexParent(BPlusTree tree, internal_t *newInternal, off_t newInternalOffset);  // reset the children's parent as the newInternal node
 int KeyCmp(my_key_t A, my_key_t B);
 int IntKeyCmp(int A, int B);
