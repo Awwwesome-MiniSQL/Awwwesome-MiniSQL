@@ -123,6 +123,11 @@ int Remove(BPlusTree tree, my_key_t key);
 int BorrowKey(BPlusTree tree, int borrowFromRight, leaf_t *leaf);
 void UpdateIndexChild(BPlusTree tree, off_t parentOffset, my_key_t oldKey, my_key_t newKey);
 int MergeLeaves(leaf_t *left, leaf_t *right);
-int RemoveNode(leaf_t *left, leaf_t *right);
-int RemoveIndex(internal_t *node, my_key_t oldKey);
+int RemoveLeaf(BPlusTree tree, leaf_t *left, leaf_t *right);
+int RemoveIndex(BPlusTree tree, internal_t *node, off_t offset, my_key_t oldKey);
+void UnallocLeaf(BPlusTree tree);
+void UnallocInternal(BPlusTree tree);
+int BorrowKeyFromInternal(BPlusTree tree, int borrowFromRight, internal_t *node, off_t offset);
+void MergeInternals(internal_t *left, internal_t *right);
+void RemoveInternal(BPlusTree tree, internal_t *left, internal_t *right);
 #endif

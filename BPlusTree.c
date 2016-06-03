@@ -571,19 +571,18 @@ int Remove(BPlusTree tree, my_key_t key)
 
     minChildrenNum = tree->meta.leafNum == 1 ? 0 : tree->meta.order / 2;
     // delete the key, move keys behind it one by one
-    for (i = keyPos; i < (int)leaf->n; i++)
+    for (i = keyPos; i < (int)leaf->n - 1; i++)
     {
         leaf->children[i] = leaf->children[i + 1];
     }
     leaf->n--;
-    if (leaf->n < minChildrenNum)
-    // Oops, we have to merge the leaf with a neighbor or borrow a child from its sibling
+    if (leaf->n < minChildrenNum)  // Oops, we have to merge the leaf with a neighbor or borrow a child from its sibling
     {
-        // try to borrow from left
-        if (leaf->prev)
-        done = BorrowKey(tree, 0, leaf);
-        // try to borrow from right
-        if (!done && leaf->next)
+        if (leaf->prev)  // try to borrow from left
+        {
+            done = BorrowKey(tree, 0, leaf);
+        }
+        if (!done && leaf->next)  // try to borrow from right
         {
             done = BorrowKey(tree, 1, leaf);
         }
@@ -591,34 +590,37 @@ int Remove(BPlusTree tree, my_key_t key)
         if (!done)
         {
             parent = (internal_t *)ReadBlock(tree->path, parentOffset, sizeof(internal_t));
-            if (parent->children[parent->n - 1].child != offset)  // leaf is not the last child of parent, merge it with leaf->prev
+            if (parent->children[parent->n - 1].child == offset)  // leaf is the last child of parent, merge it with leaf->prev
             {
                 sibling = (leaf_t *)ReadBlock(tree->path, leaf->prev, sizeof(leaf_t));
                 MergeLeaves(sibling, leaf);
-                RemoveNode(sibling, leaf);
+                RemoveLeaf(tree, sibling, leaf);
                 WriteBlock(tree->path, sibling, leaf->prev, sizeof(leaf_t));
-    #ifdef NOBUFFER
+#ifdef NOBUFFER
                 free(sibling);
-    #endif
+#endif
                 oldKey = leaf->children[0].key;
             }
             else  // merge leaf with leaf->next
             {
                 sibling = (leaf_t *)ReadBlock(tree->path, leaf->next, sizeof(leaf_t));
                 MergeLeaves(leaf, sibling);
-                RemoveNode(leaf, sibling);
+                RemoveLeaf(tree, leaf, sibling);
                 WriteBlock(tree->path, leaf, offset, sizeof(leaf_t));
                 oldKey = sibling->children[0].key;
+#ifdef NOBUFFER
+                free(sibling);
+#endif
             }
-            RemoveIndex(parent, oldKey);
+            RemoveIndex(tree, parent, parentOffset, oldKey);
         }
         else
         {  // succeed borrowing, write back leaf
             WriteBlock(tree->path, leaf, offset, sizeof(leaf_t));
         }
     }
-    else
-    {  // no need to borrow or merge
+    else  // no need to borrow or merge
+    {
         WriteBlock(tree->path, leaf, offset, sizeof(leaf_t));
     }
 #ifdef NOBUFFER
@@ -696,15 +698,141 @@ void UpdateIndexChild(BPlusTree tree, off_t parentOffset, my_key_t oldKey, my_ke
 
 int MergeLeaves(leaf_t *left, leaf_t *right)
 {
+    int i, j;
+    for (i = 0, j = (int)left->n; i < (int)right->n; i++, j++)
+    {
+        left->children[j] = right->children[i];
+    }
+    left->n += right->n;
     return 0;
 }
 
-int RemoveNode(leaf_t *left, leaf_t *right)
+int RemoveLeaf(BPlusTree tree, leaf_t *left, leaf_t *right)
 {
+    leaf_t *rightNext;
+    left->next = right->next;
+    UnallocLeaf(tree);
+    if (right->next)
+    {
+        rightNext = (leaf_t *)ReadBlock(tree->path, right->next, sizeof(leaf_t));
+        rightNext->prev = right->prev;
+        WriteBlock(tree->path, rightNext, right->next, sizeof(leaf_t));
+    }
+    WriteBlock(tree->path, &tree->meta, META_OFFSET, BLOCK_SIZE);
     return 0;
 }
 
-int RemoveIndex(internal_t *node, my_key_t oldKey)
+int RemoveIndex(BPlusTree tree, internal_t *node, off_t offset, my_key_t oldKey)
 {
+    size_t minChildrenNum;
+    internal_t *parent, *sibling;
+    my_key_t keytoRemove;
+    int i, keyPos, compareRes, done = 0;
+    for(i = 0; i < (int)node->n; i++)
+    {
+        compareRes = KeyCmp(node->children[i].key, oldKey);
+        if (compareRes == 0)
+        {
+            keyPos = i;
+            break;
+        }
+    }
+    minChildrenNum = node->parent == 0 ? 1 : tree->meta.order / 2;
+    // delete the key, move keys behind it one by one
+    for (i = keyPos; i < (int)node->n - 1; i++)
+    {
+        node->children[i] = node->children[i + 1];
+    }
+    node->n--;
+    // if node is root and has one key now
+    if (0 == node->parent && 1 == node->n && tree->meta.leafNum != 1)
+    {
+        UnallocInternal(tree);
+        tree->meta.rootOffset = node->children[0].child;
+        tree->meta.height--;
+        WriteBlock(tree->path, &tree->meta, META_OFFSET, BLOCK_SIZE);
+#ifdef NOBUFFER
+        free(node);
+#endif
+        return 0;
+    }
+
+    if (node->n < minChildrenNum)  // Oops, we have to merge the node with a neighbor or borrow a child from its sibling
+    {
+        // @TODO bug here: node->prev == node->next == 0, but it should not be that case
+        if (node->prev)  // try to borrow from left
+        {
+            done = BorrowKeyFromInternal(tree, 0, node, offset);
+        }
+        if (!done && node->next)  // try to borrow from right
+        {
+            done = BorrowKeyFromInternal(tree, 1, node, offset);
+        }
+        // try to merge
+        if (!done)
+        {
+            parent = (internal_t *)ReadBlock(tree->path, node->parent, sizeof(internal_t));
+            if (parent->children[parent->n - 1].child == offset)  // ndoe is the last child of parent, merge it with node->prev
+            {
+                sibling = (internal_t *)ReadBlock(tree->path, node->prev, sizeof(internal_t));
+                MergeInternals(sibling, node);
+                RemoveInternal(tree, sibling, node);
+                WriteBlock(tree->path, sibling, node->prev, sizeof(internal_t));
+#ifdef NOBUFFER
+                free(sibling);
+#endif
+                keytoRemove = node->children[0].key;
+            }
+            else  // merge node with node->next
+            {
+                sibling = (internal_t *)ReadBlock(tree->path, node->next, sizeof(internal_t));
+                MergeInternals(node, sibling);
+                RemoveInternal(tree, node, sibling);
+                WriteBlock(tree->path, node, offset, sizeof(internal_t));
+#ifdef NOBUFFER
+                free(sibling);
+#endif
+                keytoRemove = sibling->children[0].key;
+            }
+            RemoveIndex(tree, parent, node->parent, keytoRemove);
+        }
+        else  // succeed borrowing, write back leaf
+        {
+            WriteBlock(tree->path, node, offset, sizeof(internal_t));
+        }
+    }
+    else   // no need to borrow or merge
+    {
+            WriteBlock(tree->path, node, offset, sizeof(internal_t));
+    }
+#ifdef NOBUFFER
+    free(node);
+#endif
     return 0;
+}
+
+void UnallocLeaf(BPlusTree tree)
+{
+    tree->meta.leafNum--;
+}
+
+void UnallocInternal(BPlusTree tree)
+{
+    tree->meta.internalNum--;
+}
+
+int BorrowKeyFromInternal(BPlusTree tree, int borrowFromRight, internal_t *node, off_t offset)
+{
+
+    return 0;
+}
+
+void MergeInternals(internal_t *left, internal_t *right)
+{
+
+}
+
+void RemoveInternal(BPlusTree tree, internal_t *left, internal_t *right)
+{
+
 }

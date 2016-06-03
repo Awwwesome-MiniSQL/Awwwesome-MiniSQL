@@ -51,6 +51,7 @@ int main()
         Insert(&tree, newKey, i);
     }
     */
+    // test search
     newKey.key = n / 2;
     printf("value of n / 2: %ld\n", Search(&tree, newKey));
     newKey.key = 0x12345678;
@@ -59,6 +60,7 @@ int main()
     //printf("Insert faile? %d\n", Insert(&tree, newKey, 0x12345678));
     //newKey.key = 4112;
     //printf("Insert faile? %d\n", Insert(&tree, newKey, 0x4112));
+    printf("=================================================\n");
     meta = (meta_t *)ReadBlock(fileName, META_OFFSET, sizeof(meta_t));
     leaf = (leaf_t *)ReadBlock(fileName, meta->leafOffset, sizeof(leaf_t));
     printf("leaf data:\n");
@@ -74,7 +76,37 @@ int main()
         }
         printf("\n\n");
         offset = leaf->next;
+#ifdef NOBUFFER
         free(leaf);
+#endif
+        leaf = (leaf_t *)ReadBlock(fileName, offset, sizeof(leaf_t));
+    }
+    printf("\n\n");
+    // test Remove
+    for (i = 0; i < 2 * n; i++)
+    {
+        newKey.key = i;
+        printf("Remove %d return: %d\n", i, Remove(&tree, newKey));
+    }
+    printf("=================================================\n");
+    meta = (meta_t *)ReadBlock(fileName, META_OFFSET, sizeof(meta_t));
+    leaf = (leaf_t *)ReadBlock(fileName, meta->leafOffset, sizeof(leaf_t));
+    printf("leaf data:\n");
+    printf("leaf->parent: %ld\nleaf->next: %ld\nleaf->prev: %ld\nleaf->n: %ld\nleaf->children[0].value: %ld\nleaf->children[0].key.key: %d\n", leaf->parent, leaf->next, leaf->prev, leaf->n, leaf->children[0].value, leaf->children[0].key.key);
+    printf("=================================================\n");
+    offset = meta->leafOffset;
+    for (j = 0; j < (int)meta->leafNum; j++)
+    {
+        printf("offset: %ld\n", offset);
+        for (i = 0; i < (int)leaf->n; i++)
+        {
+            printf("%ld ", leaf->children[i].value);
+        }
+        printf("\n\n");
+        offset = leaf->next;
+#ifdef NOBUFFER
+        free(leaf);
+#endif
         leaf = (leaf_t *)ReadBlock(fileName, offset, sizeof(leaf_t));
     }
     printf("\n\n");
@@ -87,7 +119,9 @@ int main()
     printf("=================================================\n");
     printf("root data: \n");
     printf("root->n: %ld\n", root->n);
+#ifdef NOBUFFER
     free(leaf);
     free(root);
+#endif
     return 0;
 }
