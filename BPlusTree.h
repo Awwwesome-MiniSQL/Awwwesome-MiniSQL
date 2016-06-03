@@ -120,5 +120,9 @@ void InsertIntoLeaf(leaf_t *leaf, record_t *newRecord);
 void InsertIntoInternal(internal_t *internal, index_t index);
 // Remove
 int Remove(BPlusTree tree, my_key_t key);
-
+int BorrowKey(BPlusTree tree, int borrowFromRight, leaf_t *leaf);
+void UpdateIndexChild(BPlusTree tree, off_t parentOffset, my_key_t oldKey, my_key_t newKey);
+int MergeLeaves(leaf_t *left, leaf_t *right);
+int RemoveNode(leaf_t *left, leaf_t *right);
+int RemoveIndex(internal_t *node, my_key_t oldKey);
 #endif

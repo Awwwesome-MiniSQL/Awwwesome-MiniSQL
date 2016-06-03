@@ -175,7 +175,6 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
         // @NOTE patch works
         if (0 == KeyCmp(leaf->children[0].key, tmpRecord.key))
         {
-            //ResetIndex(tree, leaf, key);
             tmpInternal->children[0].key = tmpRecord.key;
             tmpInternal->children[0].child = offset;
             ResetIndexR(tree, tmpInternal, tmpRecord.key, leaf->parent);
@@ -380,6 +379,9 @@ value_t Search(BPlusTree tree, my_key_t key)
     {
         printf("The key is not in the BPlusTree\n");
     }
+#ifdef NOBUFFER
+    free(leaf);
+#endif
     return 0;
 }
 
@@ -456,6 +458,9 @@ void ResetIndexR(BPlusTree tree, internal_t *tmpInternal, my_key_t key, off_t of
             }
         }
         WriteBlock(tree->path, node, parent, sizeof(internal_t));
+#ifdef NOBUFFER
+        free(node);
+#endif
         parent = node->parent;
     }
 }
@@ -532,6 +537,174 @@ void ResetIndexParent(BPlusTree tree, internal_t *internal, off_t offset)  // re
         child = (internal_t *)ReadBlock(tree->path, childOffset, sizeof(internal_t));
         child->parent = offset;
         WriteBlock(tree->path, child, childOffset, BLOCK_SIZE);
+#ifdef NOBUFFER
         free(child);
+#endif
     }
+}
+
+int Remove(BPlusTree tree, my_key_t key)
+{
+    internal_t *parent;
+    leaf_t *leaf, *sibling;
+    off_t offset, parentOffset;
+    size_t minChildrenNum;
+    my_key_t oldKey;
+    int i, compareRes, keyPos, done = 0;
+    // First search the key we are going to remove
+    parentOffset = SearchIndex(tree, key);
+    offset = SearchLeaf(tree, parentOffset, key);
+    leaf = (leaf_t *)ReadBlock(tree->path, offset, sizeof(leaf_t));
+    for (i = 0; i < (int)leaf->n; i++)
+    {
+        compareRes = KeyCmp(leaf->children[i].key, key);
+        if (compareRes == 0)
+        {
+            keyPos = i;
+            break;
+        }
+    }
+    if (i == (int)leaf->n)  // not found
+    {
+        return 1;
+    }
+
+    minChildrenNum = tree->meta.leafNum == 1 ? 0 : tree->meta.order / 2;
+    // delete the key, move keys behind it one by one
+    for (i = keyPos; i < (int)leaf->n; i++)
+    {
+        leaf->children[i] = leaf->children[i + 1];
+    }
+    leaf->n--;
+    if (leaf->n < minChildrenNum)
+    // Oops, we have to merge the leaf with a neighbor or borrow a child from its sibling
+    {
+        // try to borrow from left
+        if (leaf->prev)
+        done = BorrowKey(tree, 0, leaf);
+        // try to borrow from right
+        if (!done && leaf->next)
+        {
+            done = BorrowKey(tree, 1, leaf);
+        }
+        // try to merge
+        if (!done)
+        {
+            parent = (internal_t *)ReadBlock(tree->path, parentOffset, sizeof(internal_t));
+            if (parent->children[parent->n - 1].child != offset)  // leaf is not the last child of parent, merge it with leaf->prev
+            {
+                sibling = (leaf_t *)ReadBlock(tree->path, leaf->prev, sizeof(leaf_t));
+                MergeLeaves(sibling, leaf);
+                RemoveNode(sibling, leaf);
+                WriteBlock(tree->path, sibling, leaf->prev, sizeof(leaf_t));
+    #ifdef NOBUFFER
+                free(sibling);
+    #endif
+                oldKey = leaf->children[0].key;
+            }
+            else  // merge leaf with leaf->next
+            {
+                sibling = (leaf_t *)ReadBlock(tree->path, leaf->next, sizeof(leaf_t));
+                MergeLeaves(leaf, sibling);
+                RemoveNode(leaf, sibling);
+                WriteBlock(tree->path, leaf, offset, sizeof(leaf_t));
+                oldKey = sibling->children[0].key;
+            }
+            RemoveIndex(parent, oldKey);
+        }
+        else
+        {  // succeed borrowing, write back leaf
+            WriteBlock(tree->path, leaf, offset, sizeof(leaf_t));
+        }
+    }
+    else
+    {  // no need to borrow or merge
+        WriteBlock(tree->path, leaf, offset, sizeof(leaf_t));
+    }
+#ifdef NOBUFFER
+    free(leaf);
+#endif
+    return 0;
+}
+
+int BorrowKey(BPlusTree tree, int borrowFromRight, leaf_t *leaf)
+{
+    off_t siblingOffset;
+    leaf_t *sibling;
+    int i, borrowPos, storePos;
+
+    siblingOffset = borrowFromRight ? leaf->next : leaf->prev;
+    sibling = (leaf_t *)ReadBlock(tree->path, siblingOffset, sizeof(leaf_t));
+    if (sibling->n <= tree->meta.order / 2)  // cannot borrow
+    {
+        return 0;
+    }
+    if (borrowFromRight)
+    {
+        borrowPos = 0;
+        storePos = leaf->n;
+        UpdateIndexChild(tree, sibling->parent, sibling->children[0].key, sibling->children[1].key);
+    }
+    else
+    {
+        borrowPos = sibling->n - 1;
+        storePos = 0;
+        UpdateIndexChild(tree, leaf->parent, leaf->children[0].key, sibling->children[borrowPos].key);
+    }
+    // insert into leaf
+    for (i = (int)leaf->n - 1; i >= storePos; i--)  // shift leaf->children[i] right
+    {
+        leaf->children[i + 1] = leaf->children[i];
+    }
+    leaf->children[storePos] = sibling->children[borrowPos];
+    leaf->n++;
+    // remove from sibling
+    for (i = borrowPos + 1; i < (int)sibling->n; i++)
+    {
+        sibling->children[i - 1] = sibling->children[i];
+    }
+    sibling->n--;
+    WriteBlock(tree->path, sibling, siblingOffset, sizeof(leaf_t));
+#ifdef NOBUFFER
+        free(sibling);
+#endif
+    return 1;  // succeeded
+}
+
+void UpdateIndexChild(BPlusTree tree, off_t parentOffset, my_key_t oldKey, my_key_t newKey)
+{
+    internal_t *parent;
+    int i;
+    parent = (internal_t *)ReadBlock(tree->path, parentOffset, sizeof(internal_t));
+    for (i = 0; i < (int)parent->n; i++)
+    {
+        if (KeyCmp(parent->children[i].key, oldKey) >= 0)  // found old key
+        {
+            parent->children[i].key = newKey;
+            break;
+        }
+    }
+    if (0 == i && 0 != parent->parent)
+    {
+        UpdateIndexChild(tree, parent->parent, oldKey, newKey);
+    }
+    WriteBlock(tree->path, parent, parentOffset, sizeof(internal_t));
+#ifdef NOBUFFER
+    free(parent);
+#endif
+}
+
+int MergeLeaves(leaf_t *left, leaf_t *right)
+{
+    return 0;
+}
+
+int RemoveNode(leaf_t *left, leaf_t *right)
+{
+    return 0;
+}
+
+int RemoveIndex(internal_t *node, my_key_t oldKey)
+{
+    return 0;
 }
