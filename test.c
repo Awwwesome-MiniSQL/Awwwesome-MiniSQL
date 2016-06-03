@@ -23,7 +23,18 @@ int main()
     printf("meta data:\n");
     printf("meta.order: %ld\nmeta.valueSize: %ld\nmeta.keySize: %ld\nmeta.internalNum: %ld\nmeta.leafNum: %ld\nmeta.height: %ld\nmeta.slot: %ld\nmeta.rootOffset: %ld\nmeta.leafOffset: %ld\n", meta->order, meta->valueSize, meta->keySize, meta->internalNum, meta->leafNum, meta->height, meta->slot, meta->rootOffset, meta->leafOffset);
     // test insert
-    for (i = n; i >= 0; i--)
+    //for (i = n; i >= 0; i--)
+    for (i = 0; i < 2 * n; i = i + 2)
+    {
+    #ifndef DEBUG
+        printf("i: %d\n", i);
+    #endif
+        newKey.key = i;
+        Insert(&tree, newKey, i);
+    }
+
+    //for (i = 2 * n - 1; i > 0; i = i - 2)
+    for (i = 1; i < 2 * n; i = i + 2)
     {
     #ifndef DEBUG
         printf("i: %d\n", i);

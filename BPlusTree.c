@@ -138,7 +138,7 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
     internal_t *tmpInternal, newInternal, root;
     record_t tmpRecord;
     off_t newLeafOffset, tmpInternalOffset, newInternalOffset, newRootOffset;
-    index_t newIndex;
+    index_t newIndex, firstChild;
     int height;
 
     parent = SearchIndex(tree, key);
@@ -174,6 +174,7 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
             //ResetIndex(tree, leaf, key);
             tmpInternal->children[0].key = tmpRecord.key;
             tmpInternal->children[0].child = offset;
+            ResetIndexR(tree, tmpInternal, tmpRecord.key, leaf->parent);
         }
         WriteBlock(tree->path, leaf, offset, sizeof(leaf_t));
         WriteBlock(tree->path, &newLeaf, newLeafOffset, sizeof(leaf_t));
@@ -183,6 +184,8 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
         newIndex.child = newLeafOffset;
         height = tree->meta.height - 1;  // the current level we are dealing with
         tmpInternalOffset = leaf->parent;
+        firstChild.key = leaf->children[0].key;
+        firstChild.child = offset;
         if (1 == tmpInternal->n)  // insert the smallest one
         {
             tmpInternal->children[0].key = leaf->children[0].key;
@@ -199,6 +202,11 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
                 InsertIntoInternal(tmpInternal, newIndex);
                 WriteBlock(tree->path, tmpInternal, tmpInternalOffset, sizeof(internal_t));
                 break;
+            }
+            // @NOTE Important here, reset the parent's first child because it might be changed if a smaller node was inserted
+            if (KeyCmp(tmpInternal->children[0].key, firstChild.key) > 0)
+            {
+                tmpInternal->children[0].key = firstChild.key;
             }
             // we should create a root first
             if (0 == tmpInternal->parent)  // we reach the root node and need a new root
@@ -339,7 +347,7 @@ void InsertIntoInternal(internal_t *internal, index_t index)
     internal->children[i + 1] = index;
     internal->n++;
 #ifdef DEBUG
-    printf("After insert %d\n", index.key.key);
+    printf("After insert %d, parent: %ld\n", index.key.key, internal->parent);
     for (i = 0; i < (int)internal->n; i++)
     {
         printf("internal->children[%d]: %d, %ld\n", i, internal->children[i].key.key, internal->children[i].child);
