@@ -1,1 +1,5 @@
 *.h.gch
+*.db
+data.txt
+*.o
+test
