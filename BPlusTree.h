@@ -102,7 +102,7 @@ off_t AllocInternal(BPlusTree tree, internal_t *node);
 off_t AllocSize(BPlusTree tree, size_t size);
 // Insert
 int Insert(BPlusTree tree, my_key_t key, value_t value);
-int Search(BPlusTree tree, my_key_t key);
+value_t Search(BPlusTree tree, my_key_t key);
 off_t SearchIndex(BPlusTree tree, my_key_t key);
 off_t SearchLeaf(BPlusTree tree, off_t parent, my_key_t key);
 int SearchKeyInLeaf(my_key_t key, leaf_t *leaf);

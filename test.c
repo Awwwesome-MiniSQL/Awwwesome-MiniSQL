@@ -30,7 +30,7 @@ int main()
         printf("i: %d\n", i);
     #endif
         newKey.key = i;
-        Insert(&tree, newKey, i);
+        Insert(&tree, newKey, i * 100);
     }
 
     //for (i = 2 * n - 1; i > 0; i = i - 2)
@@ -40,9 +40,12 @@ int main()
         printf("i: %d\n", i);
     #endif
         newKey.key = i;
-        Insert(&tree, newKey, i);
+        Insert(&tree, newKey, i * 100);
     }
-
+    newKey.key = n / 2;
+    printf("value of n / 2: %ld\n", Search(&tree, newKey));
+    newKey.key = 0x12345678;
+    printf("value of 0x12345678: %ld\n", Search(&tree, newKey));
     //newKey.key = 6666;
     //printf("Insert faile? %d\n", Insert(&tree, newKey, 0x12345678));
     //newKey.key = 4112;

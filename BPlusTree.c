@@ -147,7 +147,11 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
     tmpRecord.key = key;
     tmpRecord.value = value;
     // check whether in the tree first
-    SearchKeyInLeaf(key, leaf);
+    if (SearchKeyInLeaf(key, leaf))
+    {
+        printf("The key(%d) is already in the table\n", key.key);
+
+    }
     // case 1: no need to split
     if (leaf->n < tree->meta.order)
     {
@@ -355,15 +359,29 @@ void InsertIntoInternal(internal_t *internal, index_t index)
 #endif
 }
 
-/*
-int Search(BPlusTree tree, my_key_t key)
+
+value_t Search(BPlusTree tree, my_key_t key)
 {
     off_t parent, offset;
+    leaf_t *leaf;
+    int i, compareRes;
     parent = SearchIndex(tree, key);
     offset = SearchLeaf(tree, parent, key);
+    leaf = (leaf_t *)ReadBlock(tree->path, offset, sizeof(leaf_t));
+    for (i = 0; i < (int)leaf->n; i++)
+    {
+        compareRes = KeyCmp(leaf->children[i].key, key);
+        if (compareRes == 0)
+        {
+            return leaf->children[i].value;
+        }
+    }
+    if (i == (int)leaf->n)
+    {
+        printf("The key is not in the BPlusTree\n");
+    }
     return 0;
 }
-*/
 
 int SearchKeyInLeaf(my_key_t key, leaf_t *leaf)
 {
@@ -373,15 +391,14 @@ int SearchKeyInLeaf(my_key_t key, leaf_t *leaf)
         compareRes = KeyCmp(leaf->children[i].key, key);
         if (compareRes == 0)  // the key is already in the tree
         {
-            printf("The key(%d) is already in the table\n", key.key);
-            return 1;
+            return 1;  // found
         }
         if (compareRes > 0)  // compareRes > 0 means that the key does not exists because the keys in a node are in ascending order
         {
             break;
         }
     }
-    return 0;
+    return 0;  // not found
 }
 
 // @TODO after copy, what should be updated in the parent node
