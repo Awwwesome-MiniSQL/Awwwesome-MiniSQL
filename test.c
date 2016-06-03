@@ -22,26 +22,35 @@ int main()
     meta = (meta_t *)ReadBlock(fileName, META_OFFSET, sizeof(meta_t));
     printf("meta data:\n");
     printf("meta.order: %ld\nmeta.valueSize: %ld\nmeta.keySize: %ld\nmeta.internalNum: %ld\nmeta.leafNum: %ld\nmeta.height: %ld\nmeta.slot: %ld\nmeta.rootOffset: %ld\nmeta.leafOffset: %ld\n", meta->order, meta->valueSize, meta->keySize, meta->internalNum, meta->leafNum, meta->height, meta->slot, meta->rootOffset, meta->leafOffset);
+    printf("=================================================\n");
     // test insert
     //for (i = n; i >= 0; i--)
-    for (i = 0; i < 2 * n; i = i + 2)
-    {
-    #ifndef DEBUG
-        printf("i: %d\n", i);
-    #endif
-        newKey.key = i;
-        Insert(&tree, newKey, i * 100);
-    }
-
-    //for (i = 2 * n - 1; i > 0; i = i - 2)
     for (i = 1; i < 2 * n; i = i + 2)
     {
     #ifndef DEBUG
         printf("i: %d\n", i);
     #endif
         newKey.key = i;
-        Insert(&tree, newKey, i * 100);
+        Insert(&tree, newKey, i);
     }
+
+    //for (i = 0; i < 2 * n; i = i + 2)
+    for (i = 2 * n - 2; i >= 0; i = i - 2)
+    {
+    #ifndef DEBUG
+        printf("i: %d\n", i);
+    #endif
+        newKey.key = i;
+        Insert(&tree, newKey, i);
+    }
+
+    /*
+    for (i = 0; i < n; i++)
+    {
+        newKey.key = i;
+        Insert(&tree, newKey, i);
+    }
+    */
     newKey.key = n / 2;
     printf("value of n / 2: %ld\n", Search(&tree, newKey));
     newKey.key = 0x12345678;
@@ -54,6 +63,7 @@ int main()
     leaf = (leaf_t *)ReadBlock(fileName, meta->leafOffset, sizeof(leaf_t));
     printf("leaf data:\n");
     printf("leaf->parent: %ld\nleaf->next: %ld\nleaf->prev: %ld\nleaf->n: %ld\nleaf->children[0].value: %ld\nleaf->children[0].key.key: %d\n", leaf->parent, leaf->next, leaf->prev, leaf->n, leaf->children[0].value, leaf->children[0].key.key);
+    printf("=================================================\n");
     offset = meta->leafOffset;
     for (j = 0; j < (int)meta->leafNum; j++)
     {
@@ -68,11 +78,13 @@ int main()
         leaf = (leaf_t *)ReadBlock(fileName, offset, sizeof(leaf_t));
     }
     printf("\n\n");
+    printf("=================================================\n");
     // test ReadBlock
     printf("meta data:\n");
     printf("meta.order: %ld\nmeta.valueSize: %ld\nmeta.keySize: %ld\nmeta.internalNum: %ld\nmeta.leafNum: %ld\nmeta.height: %ld\nmeta.slot: %ld\nmeta.rootOffset: %ld\nmeta.leafOffset: %ld\n", meta->order, meta->valueSize, meta->keySize, meta->internalNum, meta->leafNum, meta->height, meta->slot, meta->rootOffset, meta->leafOffset);
     // test root
     root = (internal_t *)ReadBlock(fileName, meta->rootOffset, sizeof(internal_t));
+    printf("=================================================\n");
     printf("root data: \n");
     printf("root->n: %ld\n", root->n);
     free(leaf);

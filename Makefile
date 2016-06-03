@@ -5,10 +5,12 @@ DEBUG = -g
 OBJS = BPlusTree.o test.o
 OUTPUT = -o test
 
-all: $(OBJS)
+all: test
+
+test: $(OBJS)
 	$(CC) $(LFLAGS) $(DEBUG) $(OBJS) $(OUTPUT)
 
-BPlusTree.o: BPlusTree.c BPlusTree.h
+BPlusTree.o: BPlusTree.c BPlusTree.h MiniSQL.h
 	$(CC) $(CFLAGS) $(DEBUG) BPlusTree.c
 
 test.o: test.c MiniSQL.h BPlusTree.h

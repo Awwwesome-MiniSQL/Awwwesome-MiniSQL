@@ -150,7 +150,7 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
     if (SearchKeyInLeaf(key, leaf))
     {
         printf("The key(%d) is already in the table\n", key.key);
-
+        return 1;
     }
     // case 1: no need to split
     if (leaf->n < tree->meta.order)
@@ -350,7 +350,7 @@ void InsertIntoInternal(internal_t *internal, index_t index)
     }
     internal->children[i + 1] = index;
     internal->n++;
-#ifdef DEBUG
+#ifndef DEBUG
     printf("After insert %d, parent: %ld\n", index.key.key, internal->parent);
     for (i = 0; i < (int)internal->n; i++)
     {
@@ -423,7 +423,14 @@ void CopyLeaf(leaf_t *leaf, leaf_t *newLeaf, record_t tmpRecord)  // copy the ri
         newLeaf->children[j] = leaf->children[i];
     }
     newLeaf->children[j] = swapRecord;
-    newLeaf->n = leaf->n / 2 + 1;
+    if (leaf->n % 2)
+    {
+        newLeaf->n = leaf->n / 2 + 1;
+    }
+    else
+    {
+        newLeaf->n = leaf->n / 2;
+    }
     leaf->n += 1 - newLeaf->n;
 }
 
@@ -473,7 +480,14 @@ void CopyInternal(index_t *newIndex, internal_t *tmpInternal, internal_t *newInt
         newInternal->children[j] = tmpInternal->children[i];
     }
     newInternal->children[j] = swapIndex;
-    newInternal->n = tmpInternal->n / 2 + 1;
+    if (tmpInternal->n % 2)
+    {
+        newInternal->n = tmpInternal->n / 2 + 1;
+    }
+    else
+    {
+        newInternal->n = tmpInternal->n / 2;
+    }
     tmpInternal->n += 1 - newInternal->n;
 }
 
