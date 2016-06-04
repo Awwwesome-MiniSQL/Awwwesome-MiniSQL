@@ -223,6 +223,7 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
             newInternal.parent = tmpInternal->parent;
             newInternal.next = tmpInternal->next;
             newInternal.prev = tmpInternalOffset;
+            tmpInternal->next = newInternalOffset;
             CopyInternal(&newIndex, tmpInternal, &newInternal);
             if (0 == KeyCmp(tmpInternal->children[0].key, newIndex.key))
             {
@@ -403,7 +404,6 @@ int SearchKeyInLeaf(my_key_t key, leaf_t *leaf)
     return 0;  // not found
 }
 
-// @TODO after copy, what should be updated in the parent node
 void CopyLeaf(leaf_t *leaf, leaf_t *newLeaf, record_t tmpRecord)  // copy the right half of a full leaf to a new leaf node
 {
     int i, j;
@@ -639,6 +639,9 @@ int BorrowKey(BPlusTree tree, int borrowFromRight, leaf_t *leaf)
     sibling = (leaf_t *)ReadBlock(tree->path, siblingOffset, sizeof(leaf_t));
     if (sibling->n <= tree->meta.order / 2)  // cannot borrow
     {
+#ifdef NOBUFFER
+        free(sibling);
+#endif
         return 0;
     }
     if (borrowFromRight)
@@ -774,6 +777,11 @@ int RemoveIndex(BPlusTree tree, internal_t *node, off_t offset, my_key_t oldKey)
             parent = (internal_t *)ReadBlock(tree->path, node->parent, sizeof(internal_t));
             if (parent->children[parent->n - 1].child == offset)  // ndoe is the last child of parent, merge it with node->prev
             {
+                if (0 == node->prev)
+                {
+                    fprintf(stderr, "Fatal Error: bug in the tree structure.\n");
+                    exit(-1);
+                }
                 sibling = (internal_t *)ReadBlock(tree->path, node->prev, sizeof(internal_t));
                 MergeInternals(sibling, node);
                 RemoveInternal(tree, sibling, node);
@@ -785,6 +793,11 @@ int RemoveIndex(BPlusTree tree, internal_t *node, off_t offset, my_key_t oldKey)
             }
             else  // merge node with node->next
             {
+                if (0 == node->next)
+                {
+                    fprintf(stderr, "Fatal Error: bug in the tree structure.\n");
+                    exit(-1);
+                }
                 sibling = (internal_t *)ReadBlock(tree->path, node->next, sizeof(internal_t));
                 MergeInternals(node, sibling);
                 RemoveInternal(tree, node, sibling);
@@ -823,16 +836,68 @@ void UnallocInternal(BPlusTree tree)
 
 int BorrowKeyFromInternal(BPlusTree tree, int borrowFromRight, internal_t *node, off_t offset)
 {
+    off_t siblingOffset;
+    internal_t *sibling;
+    int i, borrowPos, storePos;
 
-    return 0;
+    siblingOffset = borrowFromRight ? node->next : node->prev;
+    sibling = (internal_t *)ReadBlock(tree->path, siblingOffset, sizeof(internal_t));
+    if (sibling->n <= tree->meta.order / 2)  // cannot borrow
+    {
+        return 0;
+    }
+    if (borrowFromRight)
+    {
+        borrowPos = 0;
+        storePos = node->n;
+        UpdateIndexChild(tree, sibling->parent, sibling->children[0].key, sibling->children[1].key);
+    }
+    else
+    {
+        borrowPos = sibling->n - 1;
+        storePos = 0;
+        UpdateIndexChild(tree, node->parent, node->children[0].key, sibling->children[borrowPos].key);
+    }
+    // insert into node
+    for (i = (int)node->n - 1; i >= storePos; i--)  // shift leaf->children[i] right
+    {
+        node->children[i + 1] = node->children[i];
+    }
+    node->children[storePos] = sibling->children[borrowPos];
+    node->n++;
+    // remove from sibling
+    for (i = borrowPos + 1; i < (int)sibling->n; i++)
+    {
+        sibling->children[i - 1] = sibling->children[i];
+    }
+    sibling->n--;
+    WriteBlock(tree->path, sibling, siblingOffset, sizeof(internal_t));
+#ifdef NOBUFFER
+        free(sibling);
+#endif
+    return 1;
 }
 
 void MergeInternals(internal_t *left, internal_t *right)
 {
-
+    int i, j;
+    for (i = 0, j = (int)left->n; i < (int)right->n; i++, j++)
+    {
+        left->children[j] = right->children[i];
+    }
+    left->n += right->n;
 }
 
 void RemoveInternal(BPlusTree tree, internal_t *left, internal_t *right)
 {
-
+    internal_t *rightNext;
+    left->next = right->next;
+    UnallocInternal(tree);
+    if (right->next)
+    {
+        rightNext = (internal_t *)ReadBlock(tree->path, right->next, sizeof(internal_t));
+        rightNext->prev = right->prev;
+        WriteBlock(tree->path, rightNext, right->next, sizeof(internal_t));
+    }
+    WriteBlock(tree->path, &tree->meta, META_OFFSET, BLOCK_SIZE);
 }
