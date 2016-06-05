@@ -109,6 +109,7 @@ int SearchKeyInLeaf(my_key_t key, leaf_t *leaf);
 void CopyLeaf(leaf_t *leaf, leaf_t *newLeaf, record_t tmpRecord);  // copy the right half of a full leaf to a new leaf node
 void CopyInternal(index_t *newIndex, internal_t *tmpInternal, internal_t *newInternal);  // copy the rignt half of a full internal to a new one
 off_t CreateNewLeaf(BPlusTree tree, leaf_t *leaf, off_t offset, leaf_t *newLeaf);
+off_t CreateNewInternal(BPlusTree tree, internal_t *internal, off_t offset, internal_t *newInternal);
 off_t CreateNewRoot(BPlusTree tree, internal_t *root, internal_t *tmpInternal, off_t tmpInternalOffset);
 void ResetIndexR(BPlusTree tree, internal_t *tmpInternal, my_key_t key, off_t offset);
 void ResetIndexParent(BPlusTree tree, internal_t *newInternal, off_t newInternalOffset);  // reset the children's parent as the newInternal node

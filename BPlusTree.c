@@ -33,44 +33,6 @@ int WriteBlock(char *fileName, void *block, off_t offset, size_t size)
     return ret;
 }
 #endif
-// ========================= not my work above =========================
-// This is my part
-/* not use any more
-void OpenFile(BPlusTree tree)
-{
-    if (tree->fpLevel == 0)
-    {
-        fopen(tree->path, "rb+");
-    }
-    tree->fpLevel++;
-}
-
-void CloseFile(BPlusTree tree)
-{
-    if (tree->fpLevel == 1)
-    {
-        fclose(tree->fp);
-    }
-    tree->fpLevel--;
-}
-
-int ReadIndexBlock(BPlusTree tree, void *block, off_t offset, size_t size)
-{
-    unsigned int isDone;  // Successful or not
-    isDone = (ReadBlock(tree->path, offset, size) == NULL);
-    return isDone;
-}
-
-int WriteIndexBlock(BPlusTree tree, void *block, off_t offset, size_t size)
-{
-    int isDone;
-    OpenFile(tree);
-    isDone = (WriteBlock(tree->path, block, offset, size) == 0);
-    CloseFile(tree);
-    return isDone;
-}
-*/
-//======================= show time =======================
 // initialize tree
 void InitTree(BPlusTree tree, char *path, enum DataType type)
 {
@@ -219,11 +181,7 @@ int Insert(BPlusTree tree, my_key_t key, value_t value)
                 height++;
             }
             // full, split it
-            newInternalOffset = AllocInternal(tree, &newInternal);
-            newInternal.parent = tmpInternal->parent;
-            newInternal.next = tmpInternal->next;
-            newInternal.prev = tmpInternalOffset;
-            tmpInternal->next = newInternalOffset;
+            newInternalOffset = CreateNewInternal(tree, tmpInternal, tmpInternalOffset, &newInternal);
             CopyInternal(&newIndex, tmpInternal, &newInternal);
             if (0 == KeyCmp(tmpInternal->children[0].key, newIndex.key))
             {
@@ -499,12 +457,43 @@ void CopyInternal(index_t *newIndex, internal_t *tmpInternal, internal_t *newInt
 off_t CreateNewLeaf(BPlusTree tree, leaf_t *leaf, off_t offset, leaf_t *newLeaf)
 {
     off_t newLeafOffset;
+    leaf_t *newLeafNext;
     newLeafOffset = AllocLeaf(tree, newLeaf);
     newLeaf->parent = leaf->parent;
     newLeaf->next = leaf->next;
     leaf->next = newLeafOffset;
     newLeaf->prev = offset;
+    if (newLeaf->next)
+    {
+        newLeafNext = (leaf_t *)ReadBlock(tree->path, newLeaf->next, sizeof(leaf_t));
+        newLeafNext->prev = newLeafOffset;
+        WriteBlock(tree->path, newLeafNext, newLeaf->next, sizeof(leaf_t));
+#ifdef NOBUFFER
+        free(newLeafNext);
+#endif
+    }
     return newLeafOffset;
+}
+
+off_t CreateNewInternal(BPlusTree tree, internal_t *internal, off_t offset, internal_t *newInternal)
+{
+    off_t newInternalOffset;
+    internal_t *newInternalNext;
+    newInternalOffset = AllocInternal(tree, newInternal);
+    newInternal->parent = internal->parent;
+    newInternal->next = internal->next;
+    internal->next = newInternalOffset;
+    newInternal->prev = offset;
+    if (newInternal->next)
+    {
+        newInternalNext = (internal_t *)ReadBlock(tree->path, newInternal->next, sizeof(internal_t));
+        newInternalNext->prev = newInternalOffset;
+        WriteBlock(tree->path, newInternalNext, newInternal->next, sizeof(internal_t));
+#ifdef NOBUFFER
+        free(newInternalNext);
+#endif
+    }
+    return newInternalOffset;
 }
 
 off_t CreateNewRoot(BPlusTree tree, internal_t *root, internal_t *tmpInternal, off_t tmpInternalOffset)
@@ -569,7 +558,7 @@ int Remove(BPlusTree tree, my_key_t key)
         return 1;
     }
 
-    minChildrenNum = tree->meta.leafNum == 1 ? 0 : tree->meta.order / 2;
+    minChildrenNum = tree->meta.leafNum == 1 ? 0 : (tree->meta.order % 2 ? tree->meta.order / 2 + 1 : tree->meta.order / 2);
     // delete the key, move keys behind it one by one
     for (i = keyPos; i < (int)leaf->n - 1; i++)
     {
@@ -596,10 +585,9 @@ int Remove(BPlusTree tree, my_key_t key)
                 MergeLeaves(sibling, leaf);
                 RemoveLeaf(tree, sibling, leaf);
                 WriteBlock(tree->path, sibling, leaf->prev, sizeof(leaf_t));
-#ifdef NOBUFFER
-                free(sibling);
-#endif
+                // remove index from leaf's parent
                 oldKey = leaf->children[0].key;
+                RemoveIndex(tree, parent, parentOffset, oldKey);
             }
             else  // merge leaf with leaf->next
             {
@@ -609,10 +597,16 @@ int Remove(BPlusTree tree, my_key_t key)
                 WriteBlock(tree->path, leaf, offset, sizeof(leaf_t));
                 oldKey = sibling->children[0].key;
 #ifdef NOBUFFER
-                free(sibling);
+                free(parent);
 #endif
+                // remove index from sibling's parent
+                parentOffset = sibling->parent;
+                parent = (internal_t *)ReadBlock(tree->path, parentOffset, sizeof(internal_t));
+                RemoveIndex(tree, parent, parentOffset, oldKey);
             }
-            RemoveIndex(tree, parent, parentOffset, oldKey);
+#ifdef NOBUFFER
+            free(sibling);
+#endif
         }
         else
         {  // succeed borrowing, write back leaf
@@ -634,10 +628,11 @@ int BorrowKey(BPlusTree tree, int borrowFromRight, leaf_t *leaf)
     off_t siblingOffset;
     leaf_t *sibling;
     int i, borrowPos, storePos;
-
+    size_t minChildrenNum;
+    minChildrenNum = tree->meta.order % 2 ? tree->meta.order / 2 + 1 : tree->meta.order / 2;
     siblingOffset = borrowFromRight ? leaf->next : leaf->prev;
     sibling = (leaf_t *)ReadBlock(tree->path, siblingOffset, sizeof(leaf_t));
-    if (sibling->n <= tree->meta.order / 2)  // cannot borrow
+    if (sibling->n <= minChildrenNum)  // cannot borrow
     {
 #ifdef NOBUFFER
         free(sibling);
@@ -681,19 +676,19 @@ void UpdateIndexChild(BPlusTree tree, off_t parentOffset, my_key_t oldKey, my_ke
     internal_t *parent;
     int i;
     parent = (internal_t *)ReadBlock(tree->path, parentOffset, sizeof(internal_t));
-    for (i = 0; i < (int)parent->n; i++)
+    for (i = (int)parent->n - 1; i >= 0; i--)
     {
-        if (KeyCmp(parent->children[i].key, oldKey) >= 0)  // found old key
+        if (KeyCmp(parent->children[i].key, oldKey) <= 0 || 0 == i)  // found old key
         {
             parent->children[i].key = newKey;
             break;
         }
     }
-    if (0 == i && 0 != parent->parent)
+    WriteBlock(tree->path, parent, parentOffset, sizeof(internal_t));
+    if (0 == i && 0 != parent->parent)  // recursively update child
     {
         UpdateIndexChild(tree, parent->parent, oldKey, newKey);
     }
-    WriteBlock(tree->path, parent, parentOffset, sizeof(internal_t));
 #ifdef NOBUFFER
     free(parent);
 #endif
@@ -730,17 +725,18 @@ int RemoveIndex(BPlusTree tree, internal_t *node, off_t offset, my_key_t oldKey)
     size_t minChildrenNum;
     internal_t *parent, *sibling;
     my_key_t keytoRemove;
+    off_t parentOffset;
     int i, keyPos, compareRes, done = 0;
-    for(i = 0; i < (int)node->n; i++)
+    for(i = (int)node->n - 1; i >= 0; i--)
     {
         compareRes = KeyCmp(node->children[i].key, oldKey);
-        if (compareRes == 0)
+        if (compareRes <= 0 || 0 == i)  // @NOTE seems dangerours
         {
             keyPos = i;
             break;
         }
     }
-    minChildrenNum = node->parent == 0 ? 1 : tree->meta.order / 2;
+    minChildrenNum = node->parent == 0 ? 1 : (tree->meta.order % 2 ? tree->meta.order / 2 + 1 : tree->meta.order / 2);
     // delete the key, move keys behind it one by one
     for (i = keyPos; i < (int)node->n - 1; i++)
     {
@@ -757,12 +753,18 @@ int RemoveIndex(BPlusTree tree, internal_t *node, off_t offset, my_key_t oldKey)
 #ifdef NOBUFFER
         free(node);
 #endif
+        // a new root
+        node = (internal_t *)ReadBlock(tree->path, tree->meta.rootOffset, sizeof(internal_t));
+        node->parent = node->prev = node->next = 0;
+        WriteBlock(tree->path, node, tree->meta.rootOffset, sizeof(internal_t));
+#ifdef NOBUFFER
+        free(node);
+#endif
         return 0;
     }
 
     if (node->n < minChildrenNum)  // Oops, we have to merge the node with a neighbor or borrow a child from its sibling
     {
-        // @TODO bug here: node->prev == node->next == 0, but it should not be that case
         if (node->prev)  // try to borrow from left
         {
             done = BorrowKeyFromInternal(tree, 0, node, offset);
@@ -786,10 +788,8 @@ int RemoveIndex(BPlusTree tree, internal_t *node, off_t offset, my_key_t oldKey)
                 MergeInternals(sibling, node);
                 RemoveInternal(tree, sibling, node);
                 WriteBlock(tree->path, sibling, node->prev, sizeof(internal_t));
-#ifdef NOBUFFER
-                free(sibling);
-#endif
                 keytoRemove = node->children[0].key;
+                RemoveIndex(tree, parent, node->parent, keytoRemove);
             }
             else  // merge node with node->next
             {
@@ -802,12 +802,17 @@ int RemoveIndex(BPlusTree tree, internal_t *node, off_t offset, my_key_t oldKey)
                 MergeInternals(node, sibling);
                 RemoveInternal(tree, node, sibling);
                 WriteBlock(tree->path, node, offset, sizeof(internal_t));
-#ifdef NOBUFFER
-                free(sibling);
-#endif
                 keytoRemove = sibling->children[0].key;
+#ifdef NOBUFFER
+                free(parent);
+#endif
+                parentOffset = sibling->parent;
+                parent = (internal_t *)ReadBlock(tree->path, node->parent, sizeof(internal_t));
+                RemoveIndex(tree, parent, parentOffset, keytoRemove);
             }
-            RemoveIndex(tree, parent, node->parent, keytoRemove);
+#ifdef NOBUFFER
+            free(sibling);
+#endif
         }
         else  // succeed borrowing, write back leaf
         {
@@ -839,10 +844,12 @@ int BorrowKeyFromInternal(BPlusTree tree, int borrowFromRight, internal_t *node,
     off_t siblingOffset;
     internal_t *sibling;
     int i, borrowPos, storePos;
+    size_t minChildrenNum;
 
+    minChildrenNum = tree->meta.order % 2 ? tree->meta.order / 2 + 1 : tree->meta.order / 2;
     siblingOffset = borrowFromRight ? node->next : node->prev;
     sibling = (internal_t *)ReadBlock(tree->path, siblingOffset, sizeof(internal_t));
-    if (sibling->n <= tree->meta.order / 2)  // cannot borrow
+    if (sibling->n <= minChildrenNum)  // cannot borrow
     {
         return 0;
     }
@@ -865,6 +872,8 @@ int BorrowKeyFromInternal(BPlusTree tree, int borrowFromRight, internal_t *node,
     }
     node->children[storePos] = sibling->children[borrowPos];
     node->n++;
+    // update the child's parent
+    ResetIndexParent(tree, node, offset);
     // remove from sibling
     for (i = borrowPos + 1; i < (int)sibling->n; i++)
     {
@@ -891,6 +900,7 @@ void MergeInternals(internal_t *left, internal_t *right)
 void RemoveInternal(BPlusTree tree, internal_t *left, internal_t *right)
 {
     internal_t *rightNext;
+    off_t leftOffset = right->prev;
     left->next = right->next;
     UnallocInternal(tree);
     if (right->next)
@@ -899,5 +909,7 @@ void RemoveInternal(BPlusTree tree, internal_t *left, internal_t *right)
         rightNext->prev = right->prev;
         WriteBlock(tree->path, rightNext, right->next, sizeof(internal_t));
     }
+    //@TODO reset chilren's parent after merge
+    ResetIndexParent(tree, left, leftOffset);
     WriteBlock(tree->path, &tree->meta, META_OFFSET, BLOCK_SIZE);
 }

@@ -56,6 +56,14 @@ int main()
     printf("value of n / 2: %ld\n", Search(&tree, newKey));
     newKey.key = 0x12345678;
     printf("value of 0x12345678: %ld\n", Search(&tree, newKey));
+    newKey.key = 9;
+    printf("value of 9: %ld\n", Search(&tree, newKey));
+    newKey.key = 11;
+    printf("value of 11: %ld\n", Search(&tree, newKey));
+    newKey.key = 12;
+    printf("value of 12: %ld\n", Search(&tree, newKey));
+    newKey.key = 13;
+    printf("value of 13: %ld\n", Search(&tree, newKey));
     //newKey.key = 6666;
     //printf("Insert faile? %d\n", Insert(&tree, newKey, 0x12345678));
     //newKey.key = 4112;
@@ -83,7 +91,13 @@ int main()
     }
     printf("\n\n");
     // test Remove
-    for (i = 0; i < 2 * n; i++)
+    //for (i = 0; i < 2 * n; i++)
+    for (i = n; i >= 0; i--)
+    {
+        newKey.key = i;
+        printf("Remove %d return: %d\n", i, Remove(&tree, newKey));
+    }
+    for (i = n + 1; i < 2 * n; i++)
     {
         newKey.key = i;
         printf("Remove %d return: %d\n", i, Remove(&tree, newKey));
