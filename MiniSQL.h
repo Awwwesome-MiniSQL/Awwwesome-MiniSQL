@@ -1,7 +1,7 @@
 #ifndef MINISQL_H
 #define MINISQL_H
 #define MAX_ATTRIBUTE_NUM 32
-#define BLOCK_SIZE 100 // 4 KB a block
+#define BLOCK_SIZE 4096 // 4 KB a block
 #define DEBUG
 // three types of data, int, float, and string (the size of a string is between 0 and 255)
 enum DataType{intType, floatType, stringType};
