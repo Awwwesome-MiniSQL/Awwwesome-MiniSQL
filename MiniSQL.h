@@ -7,7 +7,7 @@
 enum DataType{intType, floatType, stringType};
 struct AttributeRecord
 {
-    char *name;
+    char name[16];  // the length of the name of attributes should be less than 16
     enum DataType type;
     char size;  // the size of the attribute
     char unique;  // unique == 1 (the attribute is unique) or 0 (not unique)
