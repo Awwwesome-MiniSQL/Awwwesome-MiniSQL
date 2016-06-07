@@ -10,7 +10,7 @@ struct AttributeRecord
 {
     char name[MAX_NAME_LENGTH];  // the length of the name of attributes should be less than 16
     enum DataType type;
-    char size;  // the size of the attribute
+    int size;  // the size of the attribute, @NOTE '\0' should be counted
     char unique;  // unique == 1 (the attribute is unique) or 0 (not unique)
     int index;  // index name
 };
@@ -25,6 +25,7 @@ struct TableRecord
     int recordSize;  // the size of a tuple
     //int buff;  // the location of the table in the buffer
     int recordNum;  // the number of records in the table
+    int recordsPerBlock;  // the number of blocks of records in the file
 };
 
 #endif
