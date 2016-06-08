@@ -50,13 +50,30 @@ int RemoveTable(Table table)
 
 int SearchTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter, int *projection)  // do linear scan
 {
-    int i, j, blockNum, tmpRecordsNum, isLastBlockNotFull;
+    int i, j, blockNum, tmpRecordsNum, isLastBlockNotFull, count;
     off_t offset;
 
     char *tmpTuple, *curBlock;
     char fileName[256];
+    // @TODO output format
+    int attrMaxLen[MAX_ATTRIBUTE_NUM], fieldMaxLen;
+    count = 0;
     // print the header of table first
-    PrintTableHeader(table, projection);
+    i = 0;
+    while (projection[i] && i < table->attrNum)
+    {
+        if (stringType == table->attributes[projection[i]].type)
+        {
+            fieldMaxLen = table->attributes[projection[i]].size;
+        }
+        else
+        {
+            fieldMaxLen = NUM_MAX_SIZE;
+        }
+        attrMaxLen[i] = (int)strlen(table->attributes[projection[i]].name) > fieldMaxLen ? strlen(table->attributes[projection[i]].name) : fieldMaxLen;
+        i++;
+    }
+    PrintTableHeader(table, projection, attrMaxLen);
     strcpy(fileName, table->name);
     strcat(fileName, "_record.db");
     // compute number of blocks in table
@@ -74,13 +91,15 @@ int SearchTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrF
             {
                 continue;
             }
-            PrintTuple(table, tmpTuple, projection);
+            PrintTuple(table, tmpTuple, projection, attrMaxLen);
+            count++;
         }
+        PrintDashes(table, projection, attrMaxLen);
 #ifdef NOBUFFER
         free(curBlock);
 #endif
     }
-    return 0;
+    return count;
 }
 
 off_t InsertTuple(Table table, char *tuple)
@@ -236,16 +255,6 @@ int CheckTuple(char *tmpTuple, Table table, IntFilter intFilter, FloatFilter flo
     return 1;
 }
 
-void PrintTuple(Table table, char *tuple, int *projection)
-{
-
-}
-
-void PrintTableHeader(Table table, int *projection)
-{
-
-}
-
 int DeleteTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter)  // Delete a tuple and move the last tuple to fill the space
 {
     int i, j, blockNum, tmpRecordsNum, isLastBlockNotFull;
@@ -294,4 +303,60 @@ int DeleteTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrF
 #endif
     }
     return 0;
+}
+
+void PrintTableHeader(Table table, int *projection, int *attrMaxLen)
+{
+    int i;
+    PrintDashes(table, projection, attrMaxLen);
+    i = 0;
+    fputc('|', stdout);
+    while (projection[i] >= 0 && i < table->attrNum)
+    {
+        printf(" %-*s |", attrMaxLen[i], table->attributes[projection[i]].name);
+        i++;
+    }
+    fputc('\n', stdout);
+    PrintDashes(table, projection, attrMaxLen);
+}
+
+void PrintTuple(Table table, char *tuple, int *projection, int *attrMaxLen)
+{
+    int i, attrOffset[MAX_ATTRIBUTE_NUM];
+    i = 0;
+    // compute each attribute's offset to use later
+    attrOffset[0] = 0;
+    for (i = 1; i < table->attrNum; i++)
+    {
+        attrOffset[i] = attrOffset[i - 1] + table->attributes[i - 1].size;
+    }
+    fputc('|', stdout);
+    while (projection[i] >= 0 && i < table->attrNum)
+    {
+        switch (table->attributes[projection[i]].type)
+        {
+            case intType: printf(" %*d |", attrMaxLen[i], *(int *)(tuple + attrOffset[projection[i]]));
+            case floatType: printf(" %*f |", attrMaxLen[i], *(float *)(tuple + attrOffset[projection[i]]));
+            case stringType: printf(" %*s |", attrMaxLen[i], tuple + attrOffset[projection[i]]);
+        }
+        i++;
+    }
+    fputc('\n', stdout);
+}
+
+void PrintDashes(Table table, int *projection, int *attrMaxLen)
+{
+    int i, j;
+    i = 0;
+    fputc('+', stdout);
+    while (projection[i] >= 0 && i < table->attrNum)
+    {
+        for (j = 0; j < attrMaxLen[i]; j++)
+        {
+            fputc('-', stdout);
+        }
+        fputc('+', stdout);
+        i++;
+    }
+    fputc('\n', stdout);
 }

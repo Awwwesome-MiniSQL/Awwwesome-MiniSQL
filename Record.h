@@ -4,6 +4,7 @@
 #include "MiniSQL.h"
 #define DEBUG
 #define TABLE_META_OFFSET 0
+#define NUM_MAX_SIZE 10
 #define TABLE_RECORD_OFFSET TABLE_META_OFFSET + BLOCK_SIZE
 #define TABLE_META_DATA_FILENAME "table_meta.db"
 enum CmpCond{EQUAL, NOTEQUAL, LARGER, SMALLER, LARGERE, SMALLERE};
@@ -45,6 +46,7 @@ int IntAttrCmp(int attrValue, IntFilter filter);
 int FloatAttrCmp(float attrValue, FloatFilter filter);
 int StrAttrCmp(char *attrValue, StrFilter filter);
 int CheckTuple(char *tmpTuple, Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);
-void PrintTuple(Table table, char *tuple, int *projection);
-void PrintTableHeader(Table table, int *projection);
+void PrintTuple(Table table, char *tuple, int *projection, int *attrMaxLen);
+void PrintTableHeader(Table table, int *projection, int *attrMaxLen);
+void PrintDashes(Table table, int *projection, int *attrMaxLen);
 #endif
