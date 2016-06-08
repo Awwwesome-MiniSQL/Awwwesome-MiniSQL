@@ -35,13 +35,14 @@ struct StrFilterType
     char src[256];
     StrFilter next;
 };
-
+// ================ other modules can use the following functions ==============
 int CreateTable(Table table);
 int RemoveTable(Table table);
 int SearchTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);
-off_t InsertTuple(Table table, char *tuple);
-int IsValidToInsert(Table table, char *tuple);
+off_t InsertTuple(Table table, char *tuple);  // return the offset of the tuple in record file
 int DeleteTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);  // Delete a tuple and move the last tuple to fill the space
+// =============================================================================
+int IsValidToInsert(Table table, char *tuple);
 int IntAttrCmp(int attrValue, IntFilter filter);
 int FloatAttrCmp(float attrValue, FloatFilter filter);
 int StrAttrCmp(char *attrValue, StrFilter filter);

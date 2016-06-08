@@ -13,11 +13,11 @@
 #define BLOCK_OFFSET META_OFFSET + BLOCK_SIZE
 #define SIZE_NO_CHILDREN sizeof(leaf_t) + TREE_ORDER * sizeof(record_t)
 #define KeyValueCmp(a, b) _Generic(a, int: IntKeyCmp, float: FloatKeyCmp, char *: StringKeyCmp)(a, b)
-// ===================================================================================
+// =====================ReadBlock and WriteBlock are not my work ===============
 // @NOTE here we need to invoke Buffer module to read / write blocks
 void *ReadBlock(char *fileName, off_t offset, size_t size);  // return a pointer which points to a block in memory
 int WriteBlock(char *fileName, void *block, off_t offset, size_t size);  // return 1 if succeeded or 0 if not
-// ===================================================================================
+// =============================================================================
 // key and value definition
 typedef off_t value_t;  // value type, default int
 typedef struct my_key_t my_key_t;  // key type (int, float, varchar)
@@ -88,21 +88,17 @@ struct tree_t
     meta_t meta;  // meta data
 };
 
-// block read / write
-/* not used any more
-void OpenFile(BPlusTree tree);
-void CloseFile(BPlusTree tree);
-int ReadIndexBlock(BPlusTree tree, void *block, off_t offset, size_t size);
-int WriteIndexBlock(BPlusTree tree, void *block, off_t offset, size_t size);
-*/
-// initialize tree
+// ================ other modules can use the following functions ==============
 void InitTree(BPlusTree tree, char *path, enum DataType type);
+int Insert(BPlusTree tree, my_key_t key, value_t value);
+value_t Search(BPlusTree tree, my_key_t key);
+int Remove(BPlusTree tree, my_key_t key);
+// =============================================================================
+// initialize tree
 off_t AllocLeaf(BPlusTree tree, leaf_t *node);
 off_t AllocInternal(BPlusTree tree, internal_t *node);
 off_t AllocSize(BPlusTree tree, size_t size);
 // Insert
-int Insert(BPlusTree tree, my_key_t key, value_t value);
-value_t Search(BPlusTree tree, my_key_t key);
 off_t SearchIndex(BPlusTree tree, my_key_t key);
 off_t SearchLeaf(BPlusTree tree, off_t parent, my_key_t key);
 int SearchKeyInLeaf(my_key_t key, leaf_t *leaf);
@@ -120,7 +116,6 @@ int StringKeyCmp(char *A, char *B);
 void InsertIntoLeaf(leaf_t *leaf, record_t *newRecord);
 void InsertIntoInternal(internal_t *internal, index_t index);
 // Remove
-int Remove(BPlusTree tree, my_key_t key);
 int BorrowKey(BPlusTree tree, int borrowFromRight, leaf_t *leaf);
 void UpdateIndexChild(BPlusTree tree, off_t parentOffset, my_key_t oldKey, my_key_t newKey);
 int MergeLeaves(leaf_t *left, leaf_t *right);
