@@ -23,7 +23,7 @@ struct FloatFilterType
 {
     int attrIndex;
     enum CmpCond cond;
-    double src;
+    float src;
     FloatFilter next;
 };
 
@@ -36,15 +36,20 @@ struct StrFilterType
     StrFilter next;
 };
 // ================ other modules can invoke the following functions ===========
+// @brief create a file XXX_record.db and write meta data into the first block of the file
 int CreateTable(Table table);
+// @brief simply remove the record file and we need catalog to update tables information
 int RemoveTable(Table table);
+// @brief search tuples and project
 int SearchTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter, int *projection);
-off_t InsertTuple(Table table, char *tuple);  // return the offset of the tuple in record file
-int DeleteTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);  // Delete a tuple and move the last tuple to fill the space
+// @brief return the offset of the tuple in record file
+off_t InsertTuple(Table table, char *tuple);
+// @brief Delete a tuple and move the last tuple to fill the space
+int DeleteTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);
 // =============================================================================
 int IsValidToInsert(Table table, char *tuple);
 int IntAttrCmp(int attrValue, IntFilter filter);
-int DoubleAttrCmp(double attrValue, FloatFilter filter);
+int FloatAttrCmp(float attrValue, FloatFilter filter);
 int StrAttrCmp(char *attrValue, StrFilter filter);
 int CheckTuple(char *tmpTuple, Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);
 void PrintTuple(Table table, char *tuple, int *projection, int *attrMaxLen);

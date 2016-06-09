@@ -153,7 +153,7 @@ int IntAttrCmp(int attrValue, IntFilter filter)
     return 0;
 }
 
-int DoubleAttrCmp(double attrValue, FloatFilter filter)
+int FloatAttrCmp(double attrValue, FloatFilter filter)
 {
     switch (filter->cond)
     {
@@ -188,7 +188,7 @@ int CheckTuple(char *tmpTuple, Table table, IntFilter intFilter, FloatFilter flo
     int i, takeIt;
     int tmpIntNum;
     IntFilter curIF;
-    double tmpDoubleNum;
+    double tmpFloatNum;
     FloatFilter curFF;
     char *tmpStr;
     StrFilter curSF;
@@ -224,8 +224,8 @@ int CheckTuple(char *tmpTuple, Table table, IntFilter intFilter, FloatFilter flo
     }
     while (NULL != curFF)
     {
-        tmpDoubleNum = *(double *)(tmpTuple + attrOffset[curIF->attrIndex]);
-        if (0 == DoubleAttrCmp(tmpDoubleNum, curFF))
+        tmpFloatNum = *(double *)(tmpTuple + attrOffset[curIF->attrIndex]);
+        if (0 == FloatAttrCmp(tmpFloatNum, curFF))
         {
             takeIt = 0;
             break;
