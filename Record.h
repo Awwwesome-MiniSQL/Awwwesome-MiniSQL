@@ -23,7 +23,7 @@ struct FloatFilterType
 {
     int attrIndex;
     enum CmpCond cond;
-    float src;
+    double src;
     FloatFilter next;
 };
 
@@ -35,16 +35,16 @@ struct StrFilterType
     char src[256];
     StrFilter next;
 };
-// ================ other modules can use the following functions ==============
+// ================ other modules can invoke the following functions ===========
 int CreateTable(Table table);
 int RemoveTable(Table table);
-int SearchTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);
+int SearchTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter, int *projection);
 off_t InsertTuple(Table table, char *tuple);  // return the offset of the tuple in record file
 int DeleteTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);  // Delete a tuple and move the last tuple to fill the space
 // =============================================================================
 int IsValidToInsert(Table table, char *tuple);
 int IntAttrCmp(int attrValue, IntFilter filter);
-int FloatAttrCmp(float attrValue, FloatFilter filter);
+int DoubleAttrCmp(double attrValue, FloatFilter filter);
 int StrAttrCmp(char *attrValue, StrFilter filter);
 int CheckTuple(char *tmpTuple, Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);
 void PrintTuple(Table table, char *tuple, int *projection, int *attrMaxLen);

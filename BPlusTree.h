@@ -88,7 +88,7 @@ struct tree_t
     meta_t meta;  // meta data
 };
 
-// ================ other modules can use the following functions ==============
+// ============= other modules can invoke the following functions ==============
 void InitTree(BPlusTree tree, char *path, enum DataType type);
 int Insert(BPlusTree tree, my_key_t key, value_t value);
 value_t Search(BPlusTree tree, my_key_t key);

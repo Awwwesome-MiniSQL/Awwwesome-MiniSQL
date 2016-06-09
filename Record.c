@@ -60,7 +60,7 @@ int SearchTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrF
     count = 0;
     // print the header of table first
     i = 0;
-    while (projection[i] && i < table->attrNum)
+    while (projection[i] >= 0 && i < table->attrNum)
     {
         if (stringType == table->attributes[projection[i]].type)
         {
@@ -153,7 +153,7 @@ int IntAttrCmp(int attrValue, IntFilter filter)
     return 0;
 }
 
-int FloatAttrCmp(float attrValue, FloatFilter filter)
+int DoubleAttrCmp(double attrValue, FloatFilter filter)
 {
     switch (filter->cond)
     {
@@ -188,7 +188,7 @@ int CheckTuple(char *tmpTuple, Table table, IntFilter intFilter, FloatFilter flo
     int i, takeIt;
     int tmpIntNum;
     IntFilter curIF;
-    float tmpFloatNum;
+    double tmpDoubleNum;
     FloatFilter curFF;
     char *tmpStr;
     StrFilter curSF;
@@ -224,8 +224,8 @@ int CheckTuple(char *tmpTuple, Table table, IntFilter intFilter, FloatFilter flo
     }
     while (NULL != curFF)
     {
-        tmpFloatNum = *(float *)(tmpTuple + attrOffset[curIF->attrIndex]);
-        if (0 == FloatAttrCmp(tmpFloatNum, curFF))
+        tmpDoubleNum = *(double *)(tmpTuple + attrOffset[curIF->attrIndex]);
+        if (0 == DoubleAttrCmp(tmpDoubleNum, curFF))
         {
             takeIt = 0;
             break;
@@ -336,7 +336,7 @@ void PrintTuple(Table table, char *tuple, int *projection, int *attrMaxLen)
         switch (table->attributes[projection[i]].type)
         {
             case intType: printf(" %*d |", attrMaxLen[i], *(int *)(tuple + attrOffset[projection[i]]));
-            case floatType: printf(" %*f |", attrMaxLen[i], *(float *)(tuple + attrOffset[projection[i]]));
+            case floatType: printf(" %*f |", attrMaxLen[i], *(double *)(tuple + attrOffset[projection[i]]));
             case stringType: printf(" %*s |", attrMaxLen[i], tuple + attrOffset[projection[i]]);
         }
         i++;
