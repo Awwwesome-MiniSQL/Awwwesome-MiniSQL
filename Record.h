@@ -47,7 +47,8 @@ off_t InsertTuple(Table table, char *tuple);
 // @brief Delete a tuple and move the last tuple to fill the space
 int DeleteTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);
 // =============================================================================
-int IsValidToInsert(Table table, char *tuple);
+// @brief try to insert the tuple in all related BPlusTree to test whether it can be inserted
+int IsValidToInsert(Table table, char *tuple, off_t offset);
 int IntAttrCmp(int attrValue, IntFilter filter);
 int FloatAttrCmp(float attrValue, FloatFilter filter);
 int StrAttrCmp(char *attrValue, StrFilter filter);

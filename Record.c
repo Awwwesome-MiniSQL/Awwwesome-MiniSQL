@@ -55,7 +55,6 @@ int SearchTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrF
 
     char *tmpTuple, *curBlock;
     char fileName[256];
-    // @TODO output format
     int attrMaxLen[MAX_ATTRIBUTE_NUM], fieldMaxLen;
     count = 0;
     // print the header of table first
@@ -107,14 +106,15 @@ off_t InsertTuple(Table table, char *tuple)
     off_t offset, insertPos;
     char *node;
     char fileName[256];
-    //@TODO maybe we need to search whether it's valid to insert the tuple
     strcpy(fileName, table->name);
     strcat(fileName, "_record.db");
+    // compute the offset of the record to insert
     offset = TABLE_RECORD_OFFSET + table->recordNum / table->recordsPerBlock * BLOCK_SIZE;
     insertPos = table->recordNum % table->recordsPerBlock * table->recordSize;
-#ifndef DEBUG
-    printf("table->recordNum: %d\n", table->recordNum);
-#endif
+    if (!IsValidToInsert(table, tuple, offset + insertPos))
+    {
+        return 0;
+    }
     if (table->recordNum % table->recordsPerBlock)
     {
         node = (char *)ReadBlock(fileName, offset, BLOCK_SIZE);
@@ -133,9 +133,14 @@ off_t InsertTuple(Table table, char *tuple)
     return offset + insertPos;
 }
 
-int IsValidToInsert(Table table, char *tuple)
+int IsValidToInsert(Table table, char *tuple, off_t offset)
 {
-    // @TODO first search in BPlusTree to see whether the primary is valid, then check those unique attributs
+    int i;
+    my_key_t key;
+    for (i = 0; i < table->attrNum; i++)
+    {
+
+    }
     return 0;
 }
 
