@@ -33,35 +33,6 @@ int WriteBlock(char *fileName, void *block, off_t offset, size_t size)
     return ret;
 }
 #endif
-// initialize tree
-void InitTree(BPlusTree tree, char *path, enum DataType type)
-{
-    internal_t root;
-    leaf_t leaf;
-    // initialize meta data
-    strcpy(tree->path, path);
-    tree->meta.order = TREE_ORDER;
-    tree->meta.valueSize = sizeof(value_t);
-    tree->meta.keySize = sizeof(my_key_t);
-    tree->meta.internalNum = 0;
-    tree->meta.leafNum = 0;
-    tree->meta.height = 1;
-    tree->meta.slot = BLOCK_OFFSET;
-    // initialize root
-    root.next = root.prev = root.parent = 0;
-    tree->meta.rootOffset = AllocInternal(tree, &root);
-    // initialize leaf
-    leaf.next = leaf.prev = 0;
-    leaf.parent = tree->meta.rootOffset;
-    tree->meta.leafOffset = root.children[0].child = AllocLeaf(tree, &leaf);
-    tree->meta.type = type;
-    // write back to buffer
-    WriteBlock(tree->path, &tree->meta, META_OFFSET, BLOCK_SIZE);
-    WriteBlock(tree->path, &root, tree->meta.rootOffset, BLOCK_SIZE);
-    WriteBlock(tree->path, &leaf, tree->meta.leafOffset, BLOCK_SIZE);
-}
-
-
 
 int IntKeyCmp(int A, int B)
 {

@@ -1,5 +1,5 @@
-#ifndef BPLUSTREE_H
-#define BPLUSTREE_H
+#ifndef BPLUSTREEINT_H
+#define BPLUSTREEINT_H
 #define NOBUFFER
 #include "MiniSQL.h"
 #include "BPlusTree.h"
@@ -10,15 +10,9 @@
 //typedef _off_t off_t
 // the following definition of offsets might be replaced in the real work
 #define TREE_ORDER_int  ((BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t_int))
+#define KeyValueCmp(a, b) _Generic(a, int: IntKeyCmp, float: FloatKeyCmp, char *: StringKeyCmp)(a, b)
 // key and value definition
 typedef off_t value_t;  // value type, default int
-typedef struct my_key_t_int my_key_t_int;  // key type (int, float, varchar)
-struct my_key_t_int
-{
-    int key;
-    //float key;
-    //char key[256];
-};
 
 // tree structure
 typedef struct index_t_int index_t_int;
@@ -55,31 +49,8 @@ struct internal_t_int
     index_t_int children[TREE_ORDER_int];
 };
 
-typedef struct meta_t meta_t;
-struct meta_t
-{
-    size_t order;
-    size_t valueSize;
-    size_t keySize;
-    size_t internalNum;
-    size_t leafNum;
-    size_t height;
-    off_t slot;
-    off_t rootOffset;
-    off_t leafOffset;
-    enum DataType type;
-};
-
-typedef struct tree_t *BPlusTree;
-struct tree_t
-{
-    //FILE *fp;  // multi-level file handling
-    //int fpLevel; // the level of current file, to avoid open for many times
-    char path[1024];  // path to the index file
-    meta_t meta;  // meta data
-};
-
 // ============= other modules can invoke the following functions ==============
+void InitTree_int(BPlusTree tree, char *path, enum DataType type);
 int Insert_int(BPlusTree tree, my_key_t_int key, value_t value);
 value_t Search_int(BPlusTree tree, my_key_t_int key);
 int Remove_int(BPlusTree tree, my_key_t_int key);
