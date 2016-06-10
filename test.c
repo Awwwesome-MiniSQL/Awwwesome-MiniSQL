@@ -20,17 +20,16 @@ int main()
     table.attrNum = 0;
     table.attributes[0].type = intType;
     table.attributes[0].size = 4;
-    table.attributes[0].unique = 0;
+    table.attributes[0].unique = 1;
     table.attributes[0].index = -1;
     table.attrNum++;
     // attribute 1: ID
     strcpy(table.attributes[1].name, "ID");
     table.attributes[1].type = stringType;
     table.attributes[1].size = 4;
-    table.attributes[1].unique = 1;
+    table.attributes[1].unique = 0;
     table.attributes[1].index = -1;
-    table.primaryKey = 1;
-    table.attrNum = 2;
+    table.primaryKey = 0;
     table.recordSize = 0;
     table.attrNum++;
     // compute record
@@ -55,7 +54,7 @@ int main()
     */
     // insert float primary key
     /*
-    for (i = 0; i < 1000; i++)
+    for (i = 0; i < 10; i++)
     {
         *(int *)tuple = i;
         *(float *)(tuple + 4) = (float)(i + 0.1);
@@ -65,7 +64,8 @@ int main()
     *(float *)(tuple + 4) = (float)(998 + 0.1);
     InsertTuple(&table, tuple);
     */
-    for (i = 0; i < 1000; i++)
+
+    for (i = 0; i < 10; i++)
     {
         *(int *)tuple = i;
         strcpy(tuple + 4, "ABC");
@@ -75,8 +75,10 @@ int main()
     printf("Dengdeng\n");
     strcpy(tuple + 4, "A");
     InsertTuple(&table, tuple);
+
     //RemoveTable(&table);
     printf("recordsPerBlock: %d\n", table.recordsPerBlock);
     free(tuple);
+    SearchTuples(&table, NULL, NULL, NULL, NULL);
     return 0;
 }

@@ -54,8 +54,8 @@ int RemoveTable(Table table)
 
 int SearchTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF, int *projection)  // do linear scan
 {
-    int count, indexNum = -1;
-    int attrMaxLen[MAX_ATTRIBUTE_NUM];
+    int i, count, indexNum = -1;
+    int attrMaxLen[MAX_ATTRIBUTE_NUM], fullProjection[MAX_ATTRIBUTE_NUM];
     IntFilter curIF = intF;
     FloatFilter curFF = floatF;
     StrFilter curSF = strF;
@@ -67,6 +67,14 @@ int SearchTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
     my_key_t_str strKey;
 
     count = 0;
+    if (NULL == projection)
+    {
+        projection = fullProjection;
+        for (i = 0; i < table->attrNum; i++)
+        {
+            projection[i] = i;
+        }
+    }
     // print the header of table first
     ComputeAttrsMaxLen(table, projection, attrMaxLen);
     PrintTableHeader(table, projection, attrMaxLen);
@@ -419,7 +427,7 @@ void PrintTuple(Table table, char *tuple, int *projection, int *attrMaxLen)
         switch (table->attributes[projection[i]].type)
         {
             case intType: printf(" %*d |", attrMaxLen[i], *(int *)(tuple + attrOffset[projection[i]])); break;
-            case floatType: printf(" %*f |", attrMaxLen[i], *(double *)(tuple + attrOffset[projection[i]])); break;
+            case floatType: printf(" %*f |", attrMaxLen[i], *(float *)(tuple + attrOffset[projection[i]])); break;
             case stringType: printf(" %*s |", attrMaxLen[i], tuple + attrOffset[projection[i]]); break;
         }
         i++;
@@ -434,7 +442,7 @@ void PrintDashes(Table table, int *projection, int *attrMaxLen)
     fputc('+', stdout);
     while (projection[i] >= 0 && i < table->attrNum)
     {
-        for (j = 0; j < attrMaxLen[i]; j++)
+        for (j = 0; j < attrMaxLen[i] + 2; j++)
         {
             fputc('-', stdout);
         }
