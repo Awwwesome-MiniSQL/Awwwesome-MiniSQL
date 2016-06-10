@@ -1,7 +1,7 @@
 #include <string.h>
 #include "BPlusTree.h"
 #include "BPlusTreeInt.h"
-#include "MiniSQL.h"
+#include "../MiniSQL.h"
 // initialize tree
 off_t AllocLeaf_int(BPlusTree tree, leaf_t_int *node)
 {

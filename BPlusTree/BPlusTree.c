@@ -1,6 +1,6 @@
 #include <string.h>
 #include "BPlusTree.h"
-#include "MiniSQL.h"
+#include "../MiniSQL.h"
 // ======================= buffer read and write =======================
 // ReadBlock and WriteBlock functions are provided by Buffer module
 #ifdef NOBUFFER

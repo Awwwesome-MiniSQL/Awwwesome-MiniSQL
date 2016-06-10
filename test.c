@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "MiniSQL.h"
-#include "BPlusTree.h"
-#include "BPlusTreeInt.h"
+#include "BPlusTree/BPlusTree.h"
+#include "BPlusTree/BPlusTreeInt.h"
 int main()
 {
     FILE *fp;

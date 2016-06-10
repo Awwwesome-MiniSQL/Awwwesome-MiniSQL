@@ -1,7 +1,7 @@
 #ifndef BPLUSTREEFLOAT_H
 #define BPLUSTREEFLOAT_H
 #define NOBUFFER
-#include "MiniSQL.h"
+#include "../MiniSQL.h"
 #include "BPlusTree.h"
 #include <stddef.h>
 #include <stdlib.h>

@@ -1,9 +1,9 @@
 #include <string.h>
 #include "BPlusTree.h"
-#include "BPlusTreeStr.h"
-#include "MiniSQL.h"
+#include "BPlusTreeFloat.h"
+#include "../MiniSQL.h"
 // initialize tree
-off_t AllocLeaf_str(BPlusTree tree, leaf_t_str *node)
+off_t AllocLeaf_float(BPlusTree tree, leaf_t_float *node)
 {
     off_t slot;
     node->n = 0;
@@ -16,35 +16,36 @@ off_t AllocLeaf_str(BPlusTree tree, leaf_t_str *node)
     return slot;
 }
 
-off_t AllocInternal_str(BPlusTree tree, internal_t_str *node)
+off_t AllocInternal_float(BPlusTree tree, internal_t_float *node)
 {
     off_t slot;
     node->n = 1;
     tree->meta.internalNum++;
     slot = tree->meta.slot;
-    tree->meta.slot += BLOCK_SIZE; return slot;
+    tree->meta.slot += BLOCK_SIZE;
+    return slot;
 }
 
-void InitTree_str(BPlusTree tree, char *path, enum DataType type)
+void InitTree_float(BPlusTree tree, char *path, enum DataType type)
 {
-    internal_t_str root;
-    leaf_t_str leaf;
+    internal_t_float root;
+    leaf_t_float leaf;
     // initialize meta data
     strcpy(tree->path, path);
-    tree->meta.order = TREE_ORDER_str;
+    tree->meta.order = TREE_ORDER_float;
     tree->meta.valueSize = sizeof(value_t);
-    tree->meta.keySize = sizeof(my_key_t_str);
+    tree->meta.keySize = sizeof(my_key_t_float);
     tree->meta.internalNum = 0;
     tree->meta.leafNum = 0;
     tree->meta.height = 1;
     tree->meta.slot = BLOCK_OFFSET;
     // initialize root
     root.next = root.prev = root.parent = 0;
-    tree->meta.rootOffset = AllocInternal_str(tree, &root);
+    tree->meta.rootOffset = AllocInternal_float(tree, &root);
     // initialize leaf
     leaf.next = leaf.prev = 0;
     leaf.parent = tree->meta.rootOffset;
-    tree->meta.leafOffset = root.children[0].child = AllocLeaf_str(tree, &leaf);
+    tree->meta.leafOffset = root.children[0].child = AllocLeaf_float(tree, &leaf);
     tree->meta.type = type;
     // write back to buffer
     WriteBlock(tree->path, &tree->meta, META_OFFSET, BLOCK_SIZE);
@@ -52,35 +53,35 @@ void InitTree_str(BPlusTree tree, char *path, enum DataType type)
     WriteBlock(tree->path, &leaf, tree->meta.leafOffset, BLOCK_SIZE);
 }
 
-// Insert_str
-int Insert_str(BPlusTree tree, my_key_t_str key, value_t value)
+// Insert_float
+int Insert_float(BPlusTree tree, my_key_t_float key, value_t value)
 {
     off_t parent, offset;
-    leaf_t_str *leaf, newLeaf;
-    internal_t_str *tmpInternal, newInternal, root;
-    record_t_str tmpRecord;
+    leaf_t_float *leaf, newLeaf;
+    internal_t_float *tmpInternal, newInternal, root;
+    record_t_float tmpRecord;
     off_t newLeafOffset, tmpInternalOffset, newInternalOffset, newRootOffset;
-    index_t_str newIndex, firstChild;
+    index_t_float newIndex, firstChild;
     int height;
 
-    parent = SearchIndex_str(tree, key);
-    offset = SearchLeaf_str(tree, parent, key);
-    leaf = (leaf_t_str *)ReadBlock(tree->path, offset, sizeof(leaf_t_str));
+    parent = SearchIndex_float(tree, key);
+    offset = SearchLeaf_float(tree, parent, key);
+    leaf = (leaf_t_float *)ReadBlock(tree->path, offset, sizeof(leaf_t_float));
     tmpRecord.key = key;
     tmpRecord.value = value;
     // check whether in the tree first
-    if (SearchKeyInLeaf_str(key, leaf))
+    if (SearchKeyInLeaf_float(key, leaf))
     {
-        printf("The key(%s) is already in the table\n", key.key);
+        printf("The key(%f) is already in the table\n", key.key);
         return 1;
     }
     // case 1: no need to split
     if (leaf->n < tree->meta.order)
     {
         // do insertion sort
-        InsertIntoLeaf_str(leaf, &tmpRecord);
+        InsertIntoLeaf_float(leaf, &tmpRecord);
         // write back
-        WriteBlock(tree->path, leaf, offset, sizeof(leaf_t_str));
+        WriteBlock(tree->path, leaf, offset, sizeof(leaf_t_float));
 #ifdef NOBUFFER
         free(leaf);
 #endif
@@ -89,20 +90,20 @@ int Insert_str(BPlusTree tree, my_key_t_str key, value_t value)
     else  // leaf.n == tree->meta.order
     {
         // create new leaf
-        newLeafOffset = CreateNewLeaf_str(tree, leaf, offset, &newLeaf);
-        tmpInternal = (internal_t_str *)ReadBlock(tree->path, leaf->parent, sizeof(internal_t_str));  // read parent
+        newLeafOffset = CreateNewLeaf_float(tree, leaf, offset, &newLeaf);
+        tmpInternal = (internal_t_float *)ReadBlock(tree->path, leaf->parent, sizeof(internal_t_float));  // read parent
         // copy the right half of a full leaf to a new leaf node
-        CopyLeaf_str(leaf, &newLeaf, tmpRecord);
+        CopyLeaf_float(leaf, &newLeaf, tmpRecord);
         // after copy, we may have to reset the index of the old leaf ndoe
         // @NOTE patch works
-        if (0 == KeyCmp_str(leaf->children[0].key, tmpRecord.key))
+        if (0 == KeyCmp_float(leaf->children[0].key, tmpRecord.key))
         {
             tmpInternal->children[0].key = tmpRecord.key;
             tmpInternal->children[0].child = offset;
-            ResetIndexR_str(tree, tmpInternal, tmpRecord.key, leaf->parent);
+            ResetIndexR_float(tree, tmpInternal, tmpRecord.key, leaf->parent);
         }
-        WriteBlock(tree->path, leaf, offset, sizeof(leaf_t_str));
-        WriteBlock(tree->path, &newLeaf, newLeafOffset, sizeof(leaf_t_str));
+        WriteBlock(tree->path, leaf, offset, sizeof(leaf_t_float));
+        WriteBlock(tree->path, &newLeaf, newLeafOffset, sizeof(leaf_t_float));
         // split recursively
         // we need to insert newIndex into tmpInternal
         newIndex.key = newLeaf.children[0].key;
@@ -124,33 +125,33 @@ int Insert_str(BPlusTree tree, my_key_t_str key, value_t value)
             // fits in internal node, don't split
             if (tmpInternal->n < tree->meta.order)
             {
-                InsertIntoInternal_str(tmpInternal, newIndex);
-                WriteBlock(tree->path, tmpInternal, tmpInternalOffset, sizeof(internal_t_str));
+                InsertIntoInternal_float(tmpInternal, newIndex);
+                WriteBlock(tree->path, tmpInternal, tmpInternalOffset, sizeof(internal_t_float));
                 break;
             }
             // @NOTE Important here, reset the parent's first child because it might be changed if a smaller node was inserted
-            if (KeyCmp_str(tmpInternal->children[0].key, firstChild.key) > 0)
+            if (KeyCmp_float(tmpInternal->children[0].key, firstChild.key) > 0)
             {
                 tmpInternal->children[0].key = firstChild.key;
             }
             // we should create a root first
             if (0 == tmpInternal->parent)  // we reach the root node and need a new root
             {
-                newRootOffset = CreateNewRoot_str(tree, &root, tmpInternal, tmpInternalOffset);
+                newRootOffset = CreateNewRoot_float(tree, &root, tmpInternal, tmpInternalOffset);
                 tmpInternal->parent = newRootOffset;
                 height++;
             }
             // full, split it
-            newInternalOffset = CreateNewInternal_str(tree, tmpInternal, tmpInternalOffset, &newInternal);
-            CopyInternal_str(&newIndex, tmpInternal, &newInternal);
-            if (0 == KeyCmp_str(tmpInternal->children[0].key, newIndex.key))
+            newInternalOffset = CreateNewInternal_float(tree, tmpInternal, tmpInternalOffset, &newInternal);
+            CopyInternal_float(&newIndex, tmpInternal, &newInternal);
+            if (0 == KeyCmp_float(tmpInternal->children[0].key, newIndex.key))
             {
-                ResetIndexR_str(tree, tmpInternal, newIndex.key, tmpInternalOffset);
+                ResetIndexR_float(tree, tmpInternal, newIndex.key, tmpInternalOffset);
             }
-            WriteBlock(tree->path, tmpInternal, tmpInternalOffset, sizeof(internal_t_str));
-            WriteBlock(tree->path, &newInternal, newInternalOffset, sizeof(internal_t_str));
-            // after CopyInternal_str, we have to reset children's parent
-            ResetIndexParent_str(tree, &newInternal, newInternalOffset);  // reset the children's parent as the newInternal node
+            WriteBlock(tree->path, tmpInternal, tmpInternalOffset, sizeof(internal_t_float));
+            WriteBlock(tree->path, &newInternal, newInternalOffset, sizeof(internal_t_float));
+            // after CopyInternal_float, we have to reset children's parent
+            ResetIndexParent_float(tree, &newInternal, newInternalOffset);  // reset the children's parent as the newInternal node
             // move to the upper level
             // update newIndex
             newIndex.key = newInternal.children[0].key;
@@ -159,7 +160,7 @@ int Insert_str(BPlusTree tree, my_key_t_str key, value_t value)
 #ifdef NOBUFFER
             free(tmpInternal);
 #endif
-            tmpInternal = (internal_t_str *)ReadBlock(tree->path, tmpInternalOffset, sizeof(internal_t_str));
+            tmpInternal = (internal_t_float *)ReadBlock(tree->path, tmpInternalOffset, sizeof(internal_t_float));
             height--;
         }
 #ifdef NOBUFFER
@@ -170,20 +171,20 @@ int Insert_str(BPlusTree tree, my_key_t_str key, value_t value)
     return 0;
 }
 
-off_t SearchIndex_str(BPlusTree tree, my_key_t_str key)
+off_t SearchIndex_float(BPlusTree tree, my_key_t_float key)
 {
     off_t offset = tree->meta.rootOffset;
     int i, height = tree->meta.height;
-    internal_t_str *node;
-    //index_t_str *index;
+    internal_t_float *node;
+    //index_t_float *index;
     while (height > 1)
     {
-        node = (internal_t_str *)ReadBlock(tree->path, offset, sizeof(internal_t_str));
+        node = (internal_t_float *)ReadBlock(tree->path, offset, sizeof(internal_t_float));
         for (i = (int)node->n - 1; i >= 0; i--)  // ignore the value of node->children[0]
         {
             //index = &node->children[i];
             offset = node->children[i].child;
-            if (KeyCmp_str(node->children[i].key, key) <= 0)
+            if (KeyCmp_float(node->children[i].key, key) <= 0)
             {
                 break;
             }
@@ -197,16 +198,16 @@ off_t SearchIndex_str(BPlusTree tree, my_key_t_str key)
     return offset;
 }
 
-off_t SearchLeaf_str(BPlusTree tree, off_t parent, my_key_t_str key)
+off_t SearchLeaf_float(BPlusTree tree, off_t parent, my_key_t_float key)
 {
     off_t offset;
-    internal_t_str *node;
+    internal_t_float *node;
     int i;
-    node = (internal_t_str *)ReadBlock(tree->path, parent, sizeof(internal_t_str));
+    node = (internal_t_float *)ReadBlock(tree->path, parent, sizeof(internal_t_float));
     for (i = (int)node->n - 1; i >= 0; i--)
     {
         offset = node->children[i].child;
-        if (1 == tree->meta.leafNum || KeyCmp_str(node->children[i].key, key) <= 0)
+        if (1 == tree->meta.leafNum || KeyCmp_float(node->children[i].key, key) <= 0)
         {
             break;
         }
@@ -217,16 +218,16 @@ off_t SearchLeaf_str(BPlusTree tree, off_t parent, my_key_t_str key)
     return offset;
 }
 
-int KeyCmp_str(my_key_t_str A, my_key_t_str B)
+int KeyCmp_float(my_key_t_float A, my_key_t_float B)
 {
     return KeyValueCmp(A.key, B.key);
 }
 
-void InsertIntoLeaf_str(leaf_t_str *leaf, record_t_str *newRecord)
+void InsertIntoLeaf_float(leaf_t_float *leaf, record_t_float *newRecord)
 {
     int i;
     i = leaf->n - 1;
-    while (i >= 0 && KeyCmp_str(leaf->children[i].key, newRecord->key) > 0)
+    while (i >= 0 && KeyCmp_float(leaf->children[i].key, newRecord->key) > 0)
     {
         leaf->children[i + 1] = leaf->children[i];
         i--;
@@ -235,11 +236,11 @@ void InsertIntoLeaf_str(leaf_t_str *leaf, record_t_str *newRecord)
     leaf->n++;
 }
 
-void InsertIntoInternal_str(internal_t_str *internal, index_t_str index)
+void InsertIntoInternal_float(internal_t_float *internal, index_t_float index)
 {
     int i;
     i = internal->n - 1;
-    while (i >= 0 && KeyCmp_str(internal->children[i].key, index.key) > 0)
+    while (i >= 0 && KeyCmp_float(internal->children[i].key, index.key) > 0)
     {
         internal->children[i + 1] = internal->children[i];
         i--;
@@ -256,17 +257,17 @@ void InsertIntoInternal_str(internal_t_str *internal, index_t_str index)
 }
 
 
-value_t Search_str(BPlusTree tree, my_key_t_str key)
+value_t Search_float(BPlusTree tree, my_key_t_float key)
 {
     off_t parent, offset;
-    leaf_t_str *leaf;
+    leaf_t_float *leaf;
     int i, compareRes;
-    parent = SearchIndex_str(tree, key);
-    offset = SearchLeaf_str(tree, parent, key);
-    leaf = (leaf_t_str *)ReadBlock(tree->path, offset, sizeof(leaf_t_str));
+    parent = SearchIndex_float(tree, key);
+    offset = SearchLeaf_float(tree, parent, key);
+    leaf = (leaf_t_float *)ReadBlock(tree->path, offset, sizeof(leaf_t_float));
     for (i = 0; i < (int)leaf->n; i++)
     {
-        compareRes = KeyCmp_str(leaf->children[i].key, key);
+        compareRes = KeyCmp_float(leaf->children[i].key, key);
         if (compareRes == 0)
         {
             return leaf->children[i].value;
@@ -282,12 +283,12 @@ value_t Search_str(BPlusTree tree, my_key_t_str key)
     return 0;
 }
 
-int SearchKeyInLeaf_str(my_key_t_str key, leaf_t_str *leaf)
+int SearchKeyInLeaf_float(my_key_t_float key, leaf_t_float *leaf)
 {
     int i, compareRes;
     for (i = 0; i < (int)leaf->n; i++)
     {
-        compareRes = KeyCmp_str(leaf->children[i].key, key);
+        compareRes = KeyCmp_float(leaf->children[i].key, key);
         if (compareRes == 0)  // the key is already in the tree
         {
             return 1;  // found
@@ -300,16 +301,16 @@ int SearchKeyInLeaf_str(my_key_t_str key, leaf_t_str *leaf)
     return 0;  // not found
 }
 
-void CopyLeaf_str(leaf_t_str *leaf, leaf_t_str *newLeaf, record_t_str tmpRecord)  // copy the right half of a full leaf to a new leaf node
+void CopyLeaf_float(leaf_t_float *leaf, leaf_t_float *newLeaf, record_t_float tmpRecord)  // copy the right half of a full leaf to a new leaf node
 {
     int i, j;
-    record_t_str swapRecord;
-    if (KeyCmp_str(leaf->children[leaf->n - 1].key, tmpRecord.key) > 0)
+    record_t_float swapRecord;
+    if (KeyCmp_float(leaf->children[leaf->n - 1].key, tmpRecord.key) > 0)
     {
         // swap
         swapRecord = leaf->children[leaf->n - 1];
         leaf->n--;
-        InsertIntoLeaf_str(leaf, &tmpRecord);
+        InsertIntoLeaf_float(leaf, &tmpRecord);
     }
     else  // tmpRecord is the largest one
     {
@@ -333,18 +334,18 @@ void CopyLeaf_str(leaf_t_str *leaf, leaf_t_str *newLeaf, record_t_str tmpRecord)
 }
 
 
-void ResetIndexR_str(BPlusTree tree, internal_t_str *tmpInternal, my_key_t_str key, off_t offset)
+void ResetIndexR_float(BPlusTree tree, internal_t_float *tmpInternal, my_key_t_float key, off_t offset)
 {
     int i;
-    index_t_str newIndex;
+    index_t_float newIndex;
     off_t parent;
-    internal_t_str *node;
+    internal_t_float *node;
     newIndex.key = key;
     newIndex.child = offset;
     parent = tmpInternal->parent;
     while (parent)
     {
-        node = (internal_t_str *)ReadBlock(tree->path, parent, sizeof(internal_t_str));
+        node = (internal_t_float *)ReadBlock(tree->path, parent, sizeof(internal_t_float));
         for (i = 0; i < (int)node->n; i++)
         {
             if (node->children[i].child == newIndex.child)
@@ -353,7 +354,7 @@ void ResetIndexR_str(BPlusTree tree, internal_t_str *tmpInternal, my_key_t_str k
                 break;
             }
         }
-        WriteBlock(tree->path, node, parent, sizeof(internal_t_str));
+        WriteBlock(tree->path, node, parent, sizeof(internal_t_float));
 #ifdef NOBUFFER
         free(node);
 #endif
@@ -361,11 +362,11 @@ void ResetIndexR_str(BPlusTree tree, internal_t_str *tmpInternal, my_key_t_str k
     }
 }
 
-void CopyInternal_str(index_t_str *newIndex, internal_t_str *tmpInternal, internal_t_str *newInternal)
+void CopyInternal_float(index_t_float *newIndex, internal_t_float *tmpInternal, internal_t_float *newInternal)
 {
     int i, j;
-    index_t_str swapIndex;
-    if (KeyCmp_str(newIndex->key, tmpInternal->children[tmpInternal->n - 1].key) > 0)
+    index_t_float swapIndex;
+    if (KeyCmp_float(newIndex->key, tmpInternal->children[tmpInternal->n - 1].key) > 0)
     {
         swapIndex = *newIndex;
     }
@@ -373,7 +374,7 @@ void CopyInternal_str(index_t_str *newIndex, internal_t_str *tmpInternal, intern
     {
         swapIndex = tmpInternal->children[tmpInternal->n - 1];
         tmpInternal->n--;
-        InsertIntoInternal_str(tmpInternal, *newIndex);
+        InsertIntoInternal_float(tmpInternal, *newIndex);
     }
     for (i = (int)tmpInternal->n / 2 + 1, j = 0; i < (int)tmpInternal->n; i++, j++)
     {
@@ -392,20 +393,20 @@ void CopyInternal_str(index_t_str *newIndex, internal_t_str *tmpInternal, intern
     tmpInternal->n += 1 - newInternal->n;
 }
 
-off_t CreateNewLeaf_str(BPlusTree tree, leaf_t_str *leaf, off_t offset, leaf_t_str *newLeaf)
+off_t CreateNewLeaf_float(BPlusTree tree, leaf_t_float *leaf, off_t offset, leaf_t_float *newLeaf)
 {
     off_t newLeafOffset;
-    leaf_t_str *newLeafNext;
-    newLeafOffset = AllocLeaf_str(tree, newLeaf);
+    leaf_t_float *newLeafNext;
+    newLeafOffset = AllocLeaf_float(tree, newLeaf);
     newLeaf->parent = leaf->parent;
     newLeaf->next = leaf->next;
     leaf->next = newLeafOffset;
     newLeaf->prev = offset;
     if (newLeaf->next)
     {
-        newLeafNext = (leaf_t_str *)ReadBlock(tree->path, newLeaf->next, sizeof(leaf_t_str));
+        newLeafNext = (leaf_t_float *)ReadBlock(tree->path, newLeaf->next, sizeof(leaf_t_float));
         newLeafNext->prev = newLeafOffset;
-        WriteBlock(tree->path, newLeafNext, newLeaf->next, sizeof(leaf_t_str));
+        WriteBlock(tree->path, newLeafNext, newLeaf->next, sizeof(leaf_t_float));
 #ifdef NOBUFFER
         free(newLeafNext);
 #endif
@@ -413,20 +414,20 @@ off_t CreateNewLeaf_str(BPlusTree tree, leaf_t_str *leaf, off_t offset, leaf_t_s
     return newLeafOffset;
 }
 
-off_t CreateNewInternal_str(BPlusTree tree, internal_t_str *internal, off_t offset, internal_t_str *newInternal)
+off_t CreateNewInternal_float(BPlusTree tree, internal_t_float *internal, off_t offset, internal_t_float *newInternal)
 {
     off_t newInternalOffset;
-    internal_t_str *newInternalNext;
-    newInternalOffset = AllocInternal_str(tree, newInternal);
+    internal_t_float *newInternalNext;
+    newInternalOffset = AllocInternal_float(tree, newInternal);
     newInternal->parent = internal->parent;
     newInternal->next = internal->next;
     internal->next = newInternalOffset;
     newInternal->prev = offset;
     if (newInternal->next)
     {
-        newInternalNext = (internal_t_str *)ReadBlock(tree->path, newInternal->next, sizeof(internal_t_str));
+        newInternalNext = (internal_t_float *)ReadBlock(tree->path, newInternal->next, sizeof(internal_t_float));
         newInternalNext->prev = newInternalOffset;
-        WriteBlock(tree->path, newInternalNext, newInternal->next, sizeof(internal_t_str));
+        WriteBlock(tree->path, newInternalNext, newInternal->next, sizeof(internal_t_float));
 #ifdef NOBUFFER
         free(newInternalNext);
 #endif
@@ -434,10 +435,10 @@ off_t CreateNewInternal_str(BPlusTree tree, internal_t_str *internal, off_t offs
     return newInternalOffset;
 }
 
-off_t CreateNewRoot_str(BPlusTree tree, internal_t_str *root, internal_t_str *tmpInternal, off_t tmpInternalOffset)
+off_t CreateNewRoot_float(BPlusTree tree, internal_t_float *root, internal_t_float *tmpInternal, off_t tmpInternalOffset)
 {
     off_t newRootOffset;
-    newRootOffset = AllocInternal_str(tree, root);
+    newRootOffset = AllocInternal_float(tree, root);
     tree->meta.rootOffset = newRootOffset;
     tree->meta.height++;
     root->prev = root->next = root->parent = 0;
@@ -449,19 +450,19 @@ off_t CreateNewRoot_str(BPlusTree tree, internal_t_str *root, internal_t_str *tm
 #endif
     // update root->n
     root->n = 1;
-    WriteBlock(tree->path, root, newRootOffset, sizeof(internal_t_str));
+    WriteBlock(tree->path, root, newRootOffset, sizeof(internal_t_float));
     return newRootOffset;
 }
 
-void ResetIndexParent_str(BPlusTree tree, internal_t_str *internal, off_t offset)  // reset the children's parent as the newInternal node
+void ResetIndexParent_float(BPlusTree tree, internal_t_float *internal, off_t offset)  // reset the children's parent as the newInternal node
 {
     int i;
-    internal_t_str *child;
+    internal_t_float *child;
     off_t childOffset;
     for (i = 0; i < (int)internal->n; i++)
     {
         childOffset = internal->children[i].child;
-        child = (internal_t_str *)ReadBlock(tree->path, childOffset, sizeof(internal_t_str));
+        child = (internal_t_float *)ReadBlock(tree->path, childOffset, sizeof(internal_t_float));
         child->parent = offset;
         WriteBlock(tree->path, child, childOffset, BLOCK_SIZE);
 #ifdef NOBUFFER
@@ -470,21 +471,21 @@ void ResetIndexParent_str(BPlusTree tree, internal_t_str *internal, off_t offset
     }
 }
 
-int Remove_str(BPlusTree tree, my_key_t_str key)
+int Remove_float(BPlusTree tree, my_key_t_float key)
 {
-    internal_t_str *parent;
-    leaf_t_str *leaf, *sibling;
+    internal_t_float *parent;
+    leaf_t_float *leaf, *sibling;
     off_t offset, parentOffset;
     size_t minChildrenNum;
-    my_key_t_str oldKey;
+    my_key_t_float oldKey;
     int i, compareRes, keyPos, done = 0;
     // First search the key we are going to remove
-    parentOffset = SearchIndex_str(tree, key);
-    offset = SearchLeaf_str(tree, parentOffset, key);
-    leaf = (leaf_t_str *)ReadBlock(tree->path, offset, sizeof(leaf_t_str));
+    parentOffset = SearchIndex_float(tree, key);
+    offset = SearchLeaf_float(tree, parentOffset, key);
+    leaf = (leaf_t_float *)ReadBlock(tree->path, offset, sizeof(leaf_t_float));
     for (i = 0; i < (int)leaf->n; i++)
     {
-        compareRes = KeyCmp_str(leaf->children[i].key, key);
+        compareRes = KeyCmp_float(leaf->children[i].key, key);
         if (compareRes == 0)
         {
             keyPos = i;
@@ -507,40 +508,40 @@ int Remove_str(BPlusTree tree, my_key_t_str key)
     {
         if (leaf->prev)  // try to borrow from left
         {
-            done = BorrowKey_str(tree, 0, leaf);
+            done = BorrowKey_float(tree, 0, leaf);
         }
         if (!done && leaf->next)  // try to borrow from right
         {
-            done = BorrowKey_str(tree, 1, leaf);
+            done = BorrowKey_float(tree, 1, leaf);
         }
         // try to merge
         if (!done)
         {
-            parent = (internal_t_str *)ReadBlock(tree->path, parentOffset, sizeof(internal_t_str));
+            parent = (internal_t_float *)ReadBlock(tree->path, parentOffset, sizeof(internal_t_float));
             if (parent->children[parent->n - 1].child == offset)  // leaf is the last child of parent, merge it with leaf->prev
             {
-                sibling = (leaf_t_str *)ReadBlock(tree->path, leaf->prev, sizeof(leaf_t_str));
-                MergeLeaves_str(sibling, leaf);
-                RemoveLeaf_str(tree, sibling, leaf);
-                WriteBlock(tree->path, sibling, leaf->prev, sizeof(leaf_t_str));
+                sibling = (leaf_t_float *)ReadBlock(tree->path, leaf->prev, sizeof(leaf_t_float));
+                MergeLeaves_float(sibling, leaf);
+                RemoveLeaf_float(tree, sibling, leaf);
+                WriteBlock(tree->path, sibling, leaf->prev, sizeof(leaf_t_float));
                 // remove index from leaf's parent
                 oldKey = leaf->children[0].key;
-                RemoveIndex_str(tree, parent, parentOffset, oldKey);
+                RemoveIndex_float(tree, parent, parentOffset, oldKey);
             }
             else  // merge leaf with leaf->next
             {
-                sibling = (leaf_t_str *)ReadBlock(tree->path, leaf->next, sizeof(leaf_t_str));
-                MergeLeaves_str(leaf, sibling);
-                RemoveLeaf_str(tree, leaf, sibling);
-                WriteBlock(tree->path, leaf, offset, sizeof(leaf_t_str));
+                sibling = (leaf_t_float *)ReadBlock(tree->path, leaf->next, sizeof(leaf_t_float));
+                MergeLeaves_float(leaf, sibling);
+                RemoveLeaf_float(tree, leaf, sibling);
+                WriteBlock(tree->path, leaf, offset, sizeof(leaf_t_float));
                 oldKey = sibling->children[0].key;
 #ifdef NOBUFFER
                 free(parent);
 #endif
                 // remove index from sibling's parent
                 parentOffset = sibling->parent;
-                parent = (internal_t_str *)ReadBlock(tree->path, parentOffset, sizeof(internal_t_str));
-                RemoveIndex_str(tree, parent, parentOffset, oldKey);
+                parent = (internal_t_float *)ReadBlock(tree->path, parentOffset, sizeof(internal_t_float));
+                RemoveIndex_float(tree, parent, parentOffset, oldKey);
             }
 #ifdef NOBUFFER
             free(sibling);
@@ -548,12 +549,12 @@ int Remove_str(BPlusTree tree, my_key_t_str key)
         }
         else
         {  // succeed borrowing, write back leaf
-            WriteBlock(tree->path, leaf, offset, sizeof(leaf_t_str));
+            WriteBlock(tree->path, leaf, offset, sizeof(leaf_t_float));
         }
     }
     else  // no need to borrow or merge
     {
-        WriteBlock(tree->path, leaf, offset, sizeof(leaf_t_str));
+        WriteBlock(tree->path, leaf, offset, sizeof(leaf_t_float));
     }
 #ifdef NOBUFFER
     free(leaf);
@@ -561,15 +562,15 @@ int Remove_str(BPlusTree tree, my_key_t_str key)
     return 0;
 }
 
-int BorrowKey_str(BPlusTree tree, int borrowFromRight, leaf_t_str *leaf)
+int BorrowKey_float(BPlusTree tree, int borrowFromRight, leaf_t_float *leaf)
 {
     off_t siblingOffset;
-    leaf_t_str *sibling;
+    leaf_t_float *sibling;
     int i, borrowPos, storePos;
     size_t minChildrenNum;
     minChildrenNum = tree->meta.order % 2 ? tree->meta.order / 2 + 1 : tree->meta.order / 2;
     siblingOffset = borrowFromRight ? leaf->next : leaf->prev;
-    sibling = (leaf_t_str *)ReadBlock(tree->path, siblingOffset, sizeof(leaf_t_str));
+    sibling = (leaf_t_float *)ReadBlock(tree->path, siblingOffset, sizeof(leaf_t_float));
     if (sibling->n <= minChildrenNum)  // cannot borrow
     {
 #ifdef NOBUFFER
@@ -581,13 +582,13 @@ int BorrowKey_str(BPlusTree tree, int borrowFromRight, leaf_t_str *leaf)
     {
         borrowPos = 0;
         storePos = leaf->n;
-        UpdateIndexChild_str(tree, sibling->parent, sibling->children[0].key, sibling->children[1].key);
+        UpdateIndexChild_float(tree, sibling->parent, sibling->children[0].key, sibling->children[1].key);
     }
     else
     {
         borrowPos = sibling->n - 1;
         storePos = 0;
-        UpdateIndexChild_str(tree, leaf->parent, leaf->children[0].key, sibling->children[borrowPos].key);
+        UpdateIndexChild_float(tree, leaf->parent, leaf->children[0].key, sibling->children[borrowPos].key);
     }
     // insert into leaf
     for (i = (int)leaf->n - 1; i >= storePos; i--)  // shift leaf->children[i] right
@@ -602,37 +603,37 @@ int BorrowKey_str(BPlusTree tree, int borrowFromRight, leaf_t_str *leaf)
         sibling->children[i - 1] = sibling->children[i];
     }
     sibling->n--;
-    WriteBlock(tree->path, sibling, siblingOffset, sizeof(leaf_t_str));
+    WriteBlock(tree->path, sibling, siblingOffset, sizeof(leaf_t_float));
 #ifdef NOBUFFER
         free(sibling);
 #endif
     return 1;  // succeeded
 }
 
-void UpdateIndexChild_str(BPlusTree tree, off_t parentOffset, my_key_t_str oldKey, my_key_t_str newKey)
+void UpdateIndexChild_float(BPlusTree tree, off_t parentOffset, my_key_t_float oldKey, my_key_t_float newKey)
 {
-    internal_t_str *parent;
+    internal_t_float *parent;
     int i;
-    parent = (internal_t_str *)ReadBlock(tree->path, parentOffset, sizeof(internal_t_str));
+    parent = (internal_t_float *)ReadBlock(tree->path, parentOffset, sizeof(internal_t_float));
     for (i = (int)parent->n - 1; i >= 0; i--)
     {
-        if (KeyCmp_str(parent->children[i].key, oldKey) <= 0 || 0 == i)  // found old key
+        if (KeyCmp_float(parent->children[i].key, oldKey) <= 0 || 0 == i)  // found old key
         {
             parent->children[i].key = newKey;
             break;
         }
     }
-    WriteBlock(tree->path, parent, parentOffset, sizeof(internal_t_str));
+    WriteBlock(tree->path, parent, parentOffset, sizeof(internal_t_float));
     if (0 == i && 0 != parent->parent)  // recursively update child
     {
-        UpdateIndexChild_str(tree, parent->parent, oldKey, newKey);
+        UpdateIndexChild_float(tree, parent->parent, oldKey, newKey);
     }
 #ifdef NOBUFFER
     free(parent);
 #endif
 }
 
-int MergeLeaves_str(leaf_t_str *left, leaf_t_str *right)
+int MergeLeaves_float(leaf_t_float *left, leaf_t_float *right)
 {
     int i, j;
     for (i = 0, j = (int)left->n; i < (int)right->n; i++, j++)
@@ -643,31 +644,31 @@ int MergeLeaves_str(leaf_t_str *left, leaf_t_str *right)
     return 0;
 }
 
-int RemoveLeaf_str(BPlusTree tree, leaf_t_str *left, leaf_t_str *right)
+int RemoveLeaf_float(BPlusTree tree, leaf_t_float *left, leaf_t_float *right)
 {
-    leaf_t_str *rightNext;
+    leaf_t_float *rightNext;
     left->next = right->next;
     UnallocLeaf(tree);
     if (right->next)
     {
-        rightNext = (leaf_t_str *)ReadBlock(tree->path, right->next, sizeof(leaf_t_str));
+        rightNext = (leaf_t_float *)ReadBlock(tree->path, right->next, sizeof(leaf_t_float));
         rightNext->prev = right->prev;
-        WriteBlock(tree->path, rightNext, right->next, sizeof(leaf_t_str));
+        WriteBlock(tree->path, rightNext, right->next, sizeof(leaf_t_float));
     }
     WriteBlock(tree->path, &tree->meta, META_OFFSET, BLOCK_SIZE);
     return 0;
 }
 
-int RemoveIndex_str(BPlusTree tree, internal_t_str *node, off_t offset, my_key_t_str oldKey)
+int RemoveIndex_float(BPlusTree tree, internal_t_float *node, off_t offset, my_key_t_float oldKey)
 {
     size_t minChildrenNum;
-    internal_t_str *parent, *sibling;
-    my_key_t_str keytoRemove;
+    internal_t_float *parent, *sibling;
+    my_key_t_float keytoRemove;
     off_t parentOffset;
     int i, keyPos, compareRes, done = 0;
     for(i = (int)node->n - 1; i >= 0; i--)
     {
-        compareRes = KeyCmp_str(node->children[i].key, oldKey);
+        compareRes = KeyCmp_float(node->children[i].key, oldKey);
         if (compareRes <= 0 || 0 == i)  // @NOTE seems dangerours
         {
             keyPos = i;
@@ -692,9 +693,9 @@ int RemoveIndex_str(BPlusTree tree, internal_t_str *node, off_t offset, my_key_t
         free(node);
 #endif
         // a new root
-        node = (internal_t_str *)ReadBlock(tree->path, tree->meta.rootOffset, sizeof(internal_t_str));
+        node = (internal_t_float *)ReadBlock(tree->path, tree->meta.rootOffset, sizeof(internal_t_float));
         node->parent = node->prev = node->next = 0;
-        WriteBlock(tree->path, node, tree->meta.rootOffset, sizeof(internal_t_str));
+        WriteBlock(tree->path, node, tree->meta.rootOffset, sizeof(internal_t_float));
 #ifdef NOBUFFER
         free(node);
 #endif
@@ -705,16 +706,16 @@ int RemoveIndex_str(BPlusTree tree, internal_t_str *node, off_t offset, my_key_t
     {
         if (node->prev)  // try to borrow from left
         {
-            done = BorrowKeyFromInternal_str(tree, 0, node, offset);
+            done = BorrowKeyFromInternal_float(tree, 0, node, offset);
         }
         if (!done && node->next)  // try to borrow from right
         {
-            done = BorrowKeyFromInternal_str(tree, 1, node, offset);
+            done = BorrowKeyFromInternal_float(tree, 1, node, offset);
         }
         // try to merge
         if (!done)
         {
-            parent = (internal_t_str *)ReadBlock(tree->path, node->parent, sizeof(internal_t_str));
+            parent = (internal_t_float *)ReadBlock(tree->path, node->parent, sizeof(internal_t_float));
             if (parent->children[parent->n - 1].child == offset)  // ndoe is the last child of parent, merge it with node->prev
             {
                 if (0 == node->prev)
@@ -722,12 +723,12 @@ int RemoveIndex_str(BPlusTree tree, internal_t_str *node, off_t offset, my_key_t
                     fprintf(stderr, "Fatal Error: bug in the tree structure.\n");
                     exit(-1);
                 }
-                sibling = (internal_t_str *)ReadBlock(tree->path, node->prev, sizeof(internal_t_str));
-                MergeInternals_str(sibling, node);
-                RemoveInternal_str(tree, sibling, node);
-                WriteBlock(tree->path, sibling, node->prev, sizeof(internal_t_str));
+                sibling = (internal_t_float *)ReadBlock(tree->path, node->prev, sizeof(internal_t_float));
+                MergeInternals_float(sibling, node);
+                RemoveInternal_float(tree, sibling, node);
+                WriteBlock(tree->path, sibling, node->prev, sizeof(internal_t_float));
                 keytoRemove = node->children[0].key;
-                RemoveIndex_str(tree, parent, node->parent, keytoRemove);
+                RemoveIndex_float(tree, parent, node->parent, keytoRemove);
             }
             else  // merge node with node->next
             {
@@ -736,17 +737,17 @@ int RemoveIndex_str(BPlusTree tree, internal_t_str *node, off_t offset, my_key_t
                     fprintf(stderr, "Fatal Error: bug in the tree structure.\n");
                     exit(-1);
                 }
-                sibling = (internal_t_str *)ReadBlock(tree->path, node->next, sizeof(internal_t_str));
-                MergeInternals_str(node, sibling);
-                RemoveInternal_str(tree, node, sibling);
-                WriteBlock(tree->path, node, offset, sizeof(internal_t_str));
+                sibling = (internal_t_float *)ReadBlock(tree->path, node->next, sizeof(internal_t_float));
+                MergeInternals_float(node, sibling);
+                RemoveInternal_float(tree, node, sibling);
+                WriteBlock(tree->path, node, offset, sizeof(internal_t_float));
                 keytoRemove = sibling->children[0].key;
 #ifdef NOBUFFER
                 free(parent);
 #endif
                 parentOffset = sibling->parent;
-                parent = (internal_t_str *)ReadBlock(tree->path, node->parent, sizeof(internal_t_str));
-                RemoveIndex_str(tree, parent, parentOffset, keytoRemove);
+                parent = (internal_t_float *)ReadBlock(tree->path, node->parent, sizeof(internal_t_float));
+                RemoveIndex_float(tree, parent, parentOffset, keytoRemove);
             }
 #ifdef NOBUFFER
             free(sibling);
@@ -754,12 +755,12 @@ int RemoveIndex_str(BPlusTree tree, internal_t_str *node, off_t offset, my_key_t
         }
         else  // succeed borrowing, write back leaf
         {
-            WriteBlock(tree->path, node, offset, sizeof(internal_t_str));
+            WriteBlock(tree->path, node, offset, sizeof(internal_t_float));
         }
     }
     else   // no need to borrow or merge
     {
-            WriteBlock(tree->path, node, offset, sizeof(internal_t_str));
+            WriteBlock(tree->path, node, offset, sizeof(internal_t_float));
     }
 #ifdef NOBUFFER
     free(node);
@@ -767,16 +768,16 @@ int RemoveIndex_str(BPlusTree tree, internal_t_str *node, off_t offset, my_key_t
     return 0;
 }
 
-int BorrowKeyFromInternal_str(BPlusTree tree, int borrowFromRight, internal_t_str *node, off_t offset)
+int BorrowKeyFromInternal_float(BPlusTree tree, int borrowFromRight, internal_t_float *node, off_t offset)
 {
     off_t siblingOffset;
-    internal_t_str *sibling;
+    internal_t_float *sibling;
     int i, borrowPos, storePos;
     size_t minChildrenNum;
 
     minChildrenNum = tree->meta.order % 2 ? tree->meta.order / 2 + 1 : tree->meta.order / 2;
     siblingOffset = borrowFromRight ? node->next : node->prev;
-    sibling = (internal_t_str *)ReadBlock(tree->path, siblingOffset, sizeof(internal_t_str));
+    sibling = (internal_t_float *)ReadBlock(tree->path, siblingOffset, sizeof(internal_t_float));
     if (sibling->n <= minChildrenNum)  // cannot borrow
     {
         return 0;
@@ -785,13 +786,13 @@ int BorrowKeyFromInternal_str(BPlusTree tree, int borrowFromRight, internal_t_st
     {
         borrowPos = 0;
         storePos = node->n;
-        UpdateIndexChild_str(tree, sibling->parent, sibling->children[0].key, sibling->children[1].key);
+        UpdateIndexChild_float(tree, sibling->parent, sibling->children[0].key, sibling->children[1].key);
     }
     else
     {
         borrowPos = sibling->n - 1;
         storePos = 0;
-        UpdateIndexChild_str(tree, node->parent, node->children[0].key, sibling->children[borrowPos].key);
+        UpdateIndexChild_float(tree, node->parent, node->children[0].key, sibling->children[borrowPos].key);
     }
     // insert into node
     for (i = (int)node->n - 1; i >= storePos; i--)  // shift leaf->children[i] right
@@ -801,21 +802,21 @@ int BorrowKeyFromInternal_str(BPlusTree tree, int borrowFromRight, internal_t_st
     node->children[storePos] = sibling->children[borrowPos];
     node->n++;
     // update the child's parent
-    ResetIndexParent_str(tree, node, offset);
+    ResetIndexParent_float(tree, node, offset);
     // remove from sibling
     for (i = borrowPos + 1; i < (int)sibling->n; i++)
     {
         sibling->children[i - 1] = sibling->children[i];
     }
     sibling->n--;
-    WriteBlock(tree->path, sibling, siblingOffset, sizeof(internal_t_str));
+    WriteBlock(tree->path, sibling, siblingOffset, sizeof(internal_t_float));
 #ifdef NOBUFFER
         free(sibling);
 #endif
     return 1;
 }
 
-void MergeInternals_str(internal_t_str *left, internal_t_str *right)
+void MergeInternals_float(internal_t_float *left, internal_t_float *right)
 {
     int i, j;
     for (i = 0, j = (int)left->n; i < (int)right->n; i++, j++)
@@ -825,19 +826,19 @@ void MergeInternals_str(internal_t_str *left, internal_t_str *right)
     left->n += right->n;
 }
 
-void RemoveInternal_str(BPlusTree tree, internal_t_str *left, internal_t_str *right)
+void RemoveInternal_float(BPlusTree tree, internal_t_float *left, internal_t_float *right)
 {
-    internal_t_str *rightNext;
+    internal_t_float *rightNext;
     off_t leftOffset = right->prev;
     left->next = right->next;
     UnallocInternal(tree);
     if (right->next)
     {
-        rightNext = (internal_t_str *)ReadBlock(tree->path, right->next, sizeof(internal_t_str));
+        rightNext = (internal_t_float *)ReadBlock(tree->path, right->next, sizeof(internal_t_float));
         rightNext->prev = right->prev;
-        WriteBlock(tree->path, rightNext, right->next, sizeof(internal_t_str));
+        WriteBlock(tree->path, rightNext, right->next, sizeof(internal_t_float));
     }
     //@TODO reset chilren's parent after merge
-    ResetIndexParent_str(tree, left, leftOffset);
+    ResetIndexParent_float(tree, left, leftOffset);
     WriteBlock(tree->path, &tree->meta, META_OFFSET, BLOCK_SIZE);
 }

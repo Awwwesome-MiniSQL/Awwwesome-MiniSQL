@@ -1,7 +1,7 @@
 #ifndef RECORD_H
 #define RECORD_H
 #include <stdio.h>
-#include "MiniSQL.h"
+#include "../MiniSQL.h"
 #define DEBUG
 #define TABLE_META_OFFSET 0
 #define NUM_MAX_SIZE 10

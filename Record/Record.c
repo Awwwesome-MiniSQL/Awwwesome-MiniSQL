@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "MiniSQL.h"
+#include "../MiniSQL.h"
 #include "Record.h"
-#include "BPlusTree.h"
+#include "../BPlusTree/BPlusTree.h"
 
 int CreateTable(Table table)
 {
@@ -136,7 +136,7 @@ off_t InsertTuple(Table table, char *tuple)
 int IsValidToInsert(Table table, char *tuple, off_t offset)
 {
     int i;
-    my_key_t key;
+    my_key_t_int key;
     for (i = 0; i < table->attrNum; i++)
     {
 
