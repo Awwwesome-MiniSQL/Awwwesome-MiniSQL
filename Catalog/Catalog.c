@@ -3,5 +3,5 @@
 
 void GetIndexFileName(int indexNum, char *indexFileName)
 {
-    strcpy(indexFileName, "hello.db");
+    strcpy(indexFileName, "");
 }

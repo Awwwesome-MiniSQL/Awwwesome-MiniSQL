@@ -2,7 +2,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include "MiniSQL.h"
-#include "Record.h"
+#include "Record/Record.h"
+#include "BPlusTree/BPlusTree.h"
+#include "BPlusTree/BPlusTreeInt.h"
+#include "BPlusTree/BPlusTreeFloat.h"
+#include "BPlusTree/BPlusTreeStr.h"
+#include "Catalog/Catalog.h"
 
 int main()
 {
@@ -13,8 +18,8 @@ int main()
     strcpy(table.name, "student");
     strcpy(table.attributes[0].name, "name");
     table.attrNum = 0;
-    table.attributes[0].type = stringType;
-    table.attributes[0].size = 32;
+    table.attributes[0].type = intType;
+    table.attributes[0].size = 4;
     table.attributes[0].unique = 0;
     table.attributes[0].index = -1;
     table.attrNum++;
@@ -35,13 +40,15 @@ int main()
     }
     CreateTable(&table);
     char *tuple = (char *)malloc(table.recordSize);
-    strcpy(tuple, "Stephen Tse");
-    for (i = 32; i < 36; i++)
+    for (i = 0; i < 1000; i++)
     {
-        tuple[i] = 'A' + i - 32;
-    }
-    for (i = 0; i < 200; i++)
+        *(int *)tuple = i;
+        *(int *)(tuple + 4) = i;
         InsertTuple(&table, tuple);
+    }
+    *(int *)tuple = 4;
+    *(int *)(tuple + 4) = 998;
+    InsertTuple(&table, tuple);
     free(tuple);
     //RemoveTable(&table);
     printf("recordsPerBlock: %d\n", table.recordsPerBlock);

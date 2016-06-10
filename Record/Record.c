@@ -160,6 +160,7 @@ off_t InsertTuple(Table table, char *tuple)
     insertPos = table->recordNum % table->recordsPerBlock * table->recordSize;
     if (!IsValidToInsert(table, tuple, offset + insertPos))
     {
+        printf("[ERROR] Cannot insert tuple because of constraints\n");
         return 0;
     }
     if (table->recordNum % table->recordsPerBlock)
