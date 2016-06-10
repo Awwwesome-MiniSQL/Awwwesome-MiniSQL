@@ -4,6 +4,8 @@
 #include "MiniSQL.h"
 #include "BPlusTree/BPlusTree.h"
 #include "BPlusTree/BPlusTreeInt.h"
+#include "BPlusTree/BPlusTreeFloat.h"
+#include "BPlusTree/BPlusTreeStr.h"
 int main()
 {
     FILE *fp;

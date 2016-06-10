@@ -10,9 +10,13 @@
 // the following definition of offsets might be replaced in the real work
 #define META_OFFSET 0  // this means one file contains exactly one tree, and the beginning of a file is the meta data
 #define BLOCK_OFFSET META_OFFSET + BLOCK_SIZE
-#define InsertIndex(a, b, c) _Generic(b, my_key_t_int: Insert_int, float: Insert_float, char *: Insert_str)(a, b, c)
-#define SearchIndex(a, b) _Generic(b, my_key_t_int: Search_int, float: Search_float, char *: Search_str)(a, b)
-#define RemoveIndex(a, b) _Generic(b, my_key_t_int: Remove_int, float: Remove_float, char *: Remove_str)(a, b)
+#define InsertIndex(a, b, c) _Generic(b, my_key_t_int: Insert_int, my_key_t_float: Insert_float, my_key_t_str: Insert_str)(a, b, c)
+#define SearchIndex(a, b) _Generic(b, my_key_t_int: Search_int, my_key_t_float: Search_float, my_key_t_str: Search_str)(a, b)
+#define RemoveIndex(a, b) _Generic(b, my_key_t_int: Remove_int, my_key_t_float: Remove_float, my_key_t_str: Remove_str)(a, b)
+
+#define TREE_ORDER_float  ((BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t_float))
+#define TREE_ORDER_int  ((BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t_int))
+#define TREE_ORDER_str  ((BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t_str))
 // =====================ReadBlock and WriteBlock are not my work ===============
 // @NOTE here we need to invoke Buffer module to read / write blocks
 void *ReadBlock(char *fileName, off_t offset, size_t size);  // return a pointer which points to a block in memory
@@ -41,7 +45,7 @@ struct tree_t
 {
     //FILE *fp;  // multi-level file handling
     //int fpLevel; // the level of current file, to avoid open for many times
-    char path[1024];  // path to the index file
+    char path[256];  // path to the index file
     meta_t meta;  // meta data
 };
 
@@ -69,6 +73,56 @@ struct my_key_t_str
     char key[256];
 };
 
+typedef struct record_t_float record_t_float;
+struct record_t_float
+{
+    my_key_t_float key;
+    value_t value;
+};
+
+typedef struct leaf_t_float leaf_t_float;
+struct leaf_t_float
+{
+    off_t parent;
+    off_t next;
+    off_t prev;
+    size_t n;
+    record_t_float children[TREE_ORDER_float];
+};
+
+typedef struct record_t_int record_t_int;
+struct record_t_int
+{
+    my_key_t_int key;
+    value_t value;
+};
+
+typedef struct leaf_t_int leaf_t_int;
+struct leaf_t_int
+{
+    off_t parent;
+    off_t next;
+    off_t prev;
+    size_t n;
+    record_t_int children[TREE_ORDER_int];
+};
+
+typedef struct record_t_str record_t_str;
+struct record_t_str
+{
+    my_key_t_str key;
+    value_t value;
+};
+
+typedef struct leaf_t_str leaf_t_str;
+struct leaf_t_str
+{
+    off_t parent;
+    off_t next;
+    off_t prev;
+    size_t n;
+    record_t_str children[TREE_ORDER_str];
+};
 // ============= other modules can invoke the following functions ==============
 void InitTree(BPlusTree tree, char *path, enum DataType type);
 // =============================================================================

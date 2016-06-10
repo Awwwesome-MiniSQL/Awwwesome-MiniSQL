@@ -2,6 +2,7 @@
 #define RECORD_H
 #include <stdio.h>
 #include "../MiniSQL.h"
+#include "../BPlusTree/BPlusTree.h"
 #define DEBUG
 #define TABLE_META_OFFSET 0
 #define NUM_MAX_SIZE 10
@@ -40,7 +41,7 @@ struct StrFilterType
 int CreateTable(Table table);
 // @brief simply remove the record file and we need catalog to update tables information
 int RemoveTable(Table table);
-// @brief search tuples and project
+// @brief search tuples and project, if projection == NULL, then select * from ...
 int SearchTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter, int *projection);
 // @brief return the offset of the tuple in record file
 off_t InsertTuple(Table table, char *tuple);
@@ -56,4 +57,19 @@ int CheckTuple(char *tmpTuple, Table table, IntFilter intFilter, FloatFilter flo
 void PrintTuple(Table table, char *tuple, int *projection, int *attrMaxLen);
 void PrintTableHeader(Table table, int *projection, int *attrMaxLen);
 void PrintDashes(Table table, int *projection, int *attrMaxLen);
+void ComputeAttrsOffset(Table table, int *attrOffset);
+//@brief search whether the unique attribute value already exists in the table
+value_t SearchUniqueAttr(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);
+int TraverseSearch_int(Table table, int *projection, BPlusTree tree, my_key_t_int key, enum CmpCond cond, int *attrMaxLen, IntFilter intF, FloatFilter floatF, StrFilter strF);
+int TraverseSearch_float(Table table, int *projection, BPlusTree tree, my_key_t_float key, enum CmpCond cond, int *attrMaxLen, IntFilter intF, FloatFilter floatF, StrFilter strF);
+int TraverseSearch_str(Table table, int *projection, BPlusTree tree, my_key_t_str key, enum CmpCond cond, int *attrMaxLen, IntFilter intF, FloatFilter floatF, StrFilter strF);
+void ComputeAttrsMaxLen(Table table, int *projection, int *attrMaxLen);
+int LinearScan(Table table, int *projection, IntFilter intF, FloatFilter floatF, StrFilter strF, int *attrMaxLen);
+int Move2NextChild_int(BPlusTree tree, leaf_t_int *leaf, int i);
+int Move2PreviousChild_int(BPlusTree tree, leaf_t_int *leaf, int i);
+int Move2NextChild_float(BPlusTree tree, leaf_t_float *leaf, int i);
+int Move2PreviousChild_float(BPlusTree tree, leaf_t_float *leaf, int i);
+int Move2NextChild_str(BPlusTree tree, leaf_t_str *leaf, int i);
+int Move2PreviousChild_str(BPlusTree tree, leaf_t_str *leaf, int i);
+
 #endif

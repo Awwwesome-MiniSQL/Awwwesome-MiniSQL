@@ -9,7 +9,6 @@
 #include <string.h>
 //typedef _off_t off_t
 // the following definition of offsets might be replaced in the real work
-#define TREE_ORDER_float  ((BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t_float))
 #define KeyValueCmp(a, b) _Generic(a, int: IntKeyCmp, float: FloatKeyCmp, char *: StringKeyCmp)(a, b)
 // key and value definition
 typedef off_t value_t;  // value type, default int
@@ -20,23 +19,6 @@ struct index_t_float
 {
     my_key_t_float key;
     off_t child;
-};
-
-typedef struct record_t_float record_t_float;
-struct record_t_float
-{
-    my_key_t_float key;
-    value_t value;
-};
-
-typedef struct leaf_t_float leaf_t_float;
-struct leaf_t_float
-{
-    off_t parent;
-    off_t next;
-    off_t prev;
-    size_t n;
-    record_t_float children[TREE_ORDER_float];
 };
 
 typedef struct internal_t_float internal_t_float;
