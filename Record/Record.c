@@ -253,6 +253,9 @@ int FloatAttrCmp(float attrValue, FloatFilter filter)
         case SMALLER: return attrValue < filter->src; break;
         case SMALLERE: return attrValue <= filter->src; break;
     }
+#ifdef DEBUG
+    printf("attrValue: %f, filter->src: %f\n", attrValue, filter->src);
+#endif
     return 0;
 }
 
@@ -286,6 +289,7 @@ int CheckTuple(char *tmpTuple, Table table, IntFilter intF, FloatFilter floatF, 
     curFF = floatF;
     curSF = strF;
     int attrOffset[MAX_ATTRIBUTE_NUM];
+    ComputeAttrsOffset(table, attrOffset);
     if (NULL == intF && NULL == floatF && NULL == strF)  // select * from ...
     {
         return 1;
@@ -301,13 +305,13 @@ int CheckTuple(char *tmpTuple, Table table, IntFilter intF, FloatFilter floatF, 
         takeIt = 1;
         curIF = curIF->next;
     }
-    if (0 == takeIt)
+    if (NULL != curIF && 0 == takeIt)
     {
         return 0;
     }
     while (NULL != curFF)
     {
-        tmpFloatNum = *(double *)(tmpTuple + attrOffset[curIF->attrIndex]);
+        tmpFloatNum = *(float *)(tmpTuple + attrOffset[curFF->attrIndex]);
         if (0 == FloatAttrCmp(tmpFloatNum, curFF))
         {
             takeIt = 0;
@@ -316,7 +320,7 @@ int CheckTuple(char *tmpTuple, Table table, IntFilter intF, FloatFilter floatF, 
         takeIt = 1;
         curFF = curFF->next;
     }
-    if (0 == takeIt)
+    if (NULL != curFF && 0 == takeIt)
     {
         return 0;
     }
