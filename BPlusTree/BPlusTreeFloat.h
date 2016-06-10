@@ -32,7 +32,7 @@ struct internal_t_float
 };
 
 // ============= other modules can invoke the following functions ==============
-void InitTree_float(BPlusTree tree, char *path, enum DataType type);
+//void InitTree_float(BPlusTree tree, char *path, enum DataType type);
 int Insert_float(BPlusTree tree, my_key_t_float key, value_t value);
 value_t Search_float(BPlusTree tree, my_key_t_float key);
 int Remove_float(BPlusTree tree, my_key_t_float key);

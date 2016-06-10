@@ -32,7 +32,7 @@ struct internal_t_int
 };
 
 // ============= other modules can invoke the following functions ==============
-void InitTree_int(BPlusTree tree, char *path, enum DataType type);
+//void InitTree_int(BPlusTree tree, char *path, enum DataType type);
 int Insert_int(BPlusTree tree, my_key_t_int key, value_t value);
 value_t Search_int(BPlusTree tree, my_key_t_int key);
 int Remove_int(BPlusTree tree, my_key_t_int key);

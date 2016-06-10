@@ -65,3 +65,12 @@ void UnallocInternal(BPlusTree tree)
 {
     tree->meta.internalNum--;
 }
+
+void InitTree(BPlusTree tree, char *path, enum DataType type)
+{
+    switch (type) {
+        case intType: InitTree_int(tree, path, type);
+        case floatType: InitTree_float(tree, path, type);
+        case stringType: InitTree_str(tree, path, type);
+    }
+}

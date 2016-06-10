@@ -177,6 +177,7 @@ off_t InsertTuple(Table table, char *tuple)
 #endif
     table->recordNum++;
     WriteBlock(fileName, table, TABLE_META_OFFSET, BLOCK_SIZE);
+    // @TODO InsertTupleIndex
     return offset + insertPos;
 }
 
@@ -222,6 +223,7 @@ int IsValidToInsert(Table table, char *tuple, off_t offset)
             }
         }
     }
+
     return 1;
 }
 
@@ -359,6 +361,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
             {
                 continue;
             }
+            // @TODO remove tuple's indices
             // delete current tuple from the table
             if (j * table->recordsPerBlock + tmpRecordsNum + 1 != table->recordNum)  // the tuple to delete is not the last tuple, we move the last tuple to the
             {
@@ -796,32 +799,32 @@ int TraverseSearch_str(Table table, int *projection, BPlusTree tree, my_key_t_st
     {
         if (0 == leaf->next)  // the end of the tree
         {
-    #ifdef NOBUFFER
-                free(leaf);
-    #endif
+#ifdef NOBUFFER
+            free(leaf);
+#endif
             return count;
         }
         leafOffset = leaf->next;
         i = 0;
-    #ifdef NOBUFFER
+#ifdef NOBUFFER
         free(leaf);
-    #endif
+#endif
         leaf = (leaf_t_str *)ReadBlock(tree->path, leafOffset, BLOCK_SIZE);
     }
     else if (0 == i && 0 != compareRes && (SMALLERE == cond || SMALLER == cond))  // look up the left block
     {
         if (0 == leaf->prev)
         {
-    #ifdef NOBUFFER
+#ifdef NOBUFFER
             free(leaf);
-    #endif
+#endif
             return count;
         }
         leafOffset = leaf->prev;
         i = (int)leaf->n - 1;
-    #ifdef NOBUFFER
+#ifdef NOBUFFER
         free(leaf);
-    #endif
+#endif
         leaf = (leaf_t_str *)ReadBlock(tree->path, leafOffset, BLOCK_SIZE);
     }
 
@@ -845,9 +848,9 @@ int TraverseSearch_str(Table table, int *projection, BPlusTree tree, my_key_t_st
         }
         if (i < 0)  // no tuples to search any more
         {
-    #ifdef NOBUFFER
+#ifdef NOBUFFER
             free(leaf);
-    #endif
+#endif
             return count;
         }
     }
@@ -862,9 +865,9 @@ int TraverseSearch_str(Table table, int *projection, BPlusTree tree, my_key_t_st
                 }
                 i = Move2NextChild_str(tree, leaf, i);
             }
-    #ifdef NOBUFFER
+#ifdef NOBUFFER
             free(leaf);
-    #endif
+#endif
             break;
         case SMALLER:
         case SMALLERE: // treat SMALLERE and SMALLER as LARGER because EQUAL has been dealt with already
@@ -876,9 +879,9 @@ int TraverseSearch_str(Table table, int *projection, BPlusTree tree, my_key_t_st
                 }
                 i = Move2PreviousChild_str(tree, leaf, i);
             }
-    #ifdef NOBUFFER
+#ifdef NOBUFFER
             free(leaf);
-    #endif
+#endif
             break;
         default: break;
     }

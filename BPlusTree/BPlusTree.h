@@ -125,6 +125,9 @@ struct leaf_t_str
 };
 // ============= other modules can invoke the following functions ==============
 void InitTree(BPlusTree tree, char *path, enum DataType type);
+void InitTree_int(BPlusTree tree, char *path, enum DataType type);
+void InitTree_float(BPlusTree tree, char *path, enum DataType type);
+void InitTree_str(BPlusTree tree, char *path, enum DataType type);
 // =============================================================================
 int IntKeyCmp(int A, int B);
 int FloatKeyCmp(float A, float B);
