@@ -16,15 +16,15 @@ int main()
     // get input from interpreter
     // attribute 0: name
     strcpy(table.name, "student");
-    strcpy(table.attributes[0].name, "name");
+    strcpy(table.attributes[0].name, "ID");
     table.attrNum = 0;
-    table.attributes[0].type = floatType;
+    table.attributes[0].type = intType;
     table.attributes[0].size = 4;
     table.attributes[0].unique = 1;
     table.attributes[0].index = 0;
     table.attrNum++;
     // attribute 1: ID
-    strcpy(table.attributes[1].name, "ID");
+    strcpy(table.attributes[1].name, "name");
     table.attributes[1].type = stringType;
     table.attributes[1].size = 4;
     table.attributes[1].unique = 0;
@@ -37,6 +37,7 @@ int main()
     {
         table.recordSize += table.attributes[i].size;
     }
+    printf("Create a table ...\n");
     CreateTable(&table);
     char *tuple = (char *)malloc(table.recordSize);
     // insert int primary key
@@ -65,29 +66,33 @@ int main()
     InsertTuple(&table, tuple);
     */
 
+    printf("Insert tuples one by one ...\n");
     for (i = 0; i < 10; i++)
     {
-        *(float *)tuple = (float)(i + 0.3);
+        *(int *)tuple = i;
         strcpy(tuple + 4, "ABC");
         InsertTuple(&table, tuple);
     }
     i = 4;
-    *(float *)tuple = (float)(i + 0.3);
-    printf("Dengdeng\n");
+    *(int *)tuple = i;
     strcpy(tuple + 4, "A");
-    struct FloatFilterType intF;
+    struct IntFilterType intF;
     intF.attrIndex = 0;
     intF.cond = LARGER;
-    intF.src = (float)4.3;
+    intF.src = 4;
     intF.next = NULL;
+    printf("Initial table:\n");
     SearchTuples(&table, NULL, NULL, NULL, NULL);
-    SearchTuples(&table, NULL, &intF, NULL, NULL);
+    printf("Select tuples that tuple.ID > 4:\n");
+    SearchTuples(&table, &intF, NULL, NULL, NULL);
+    printf("Deleting tuples that tuple.ID > 4 ...\n");
     DeleteTuples(&table, NULL, NULL, NULL);
     //InsertTuple(&table, tuple);
 
     //RemoveTable(&table);
     //printf("recordsPerBlock: %d\n", table.recordsPerBlock);
     free(tuple);
+    printf("After deleteing tuples that tuple.ID > 4:\n");
     SearchTuples(&table, NULL, NULL, NULL, NULL);
     return 0;
 }

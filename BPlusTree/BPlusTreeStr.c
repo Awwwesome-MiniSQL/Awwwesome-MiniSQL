@@ -71,7 +71,7 @@ int Insert_str(BPlusTree tree, my_key_t_str key, value_t value)
     // check whether in the tree first
     if (SearchKeyInLeaf_str(key, leaf))
     {
-#ifdef DEBUG
+#ifndef DEBUG
         printf("The key(%s) is already in the table\n", key.key);
 #endif
         return 1;
@@ -274,10 +274,12 @@ value_t Search_str(BPlusTree tree, my_key_t_str key)
             return leaf->children[i].value;
         }
     }
+#ifndef DEBUG
     if (i == (int)leaf->n)
     {
         printf("The key (%s) is not in the BPlusTree\n", key.key);
     }
+#endif
 #ifdef NOBUFFER
     free(leaf);
 #endif

@@ -72,7 +72,7 @@ int Insert_float(BPlusTree tree, my_key_t_float key, value_t value)
     // check whether in the tree first
     if (SearchKeyInLeaf_float(key, leaf))
     {
-#ifdef DEBUG
+#ifndef DEBUG
         printf("The key(%f) is already in the table\n", key.key);
 #endif
         return 1;
@@ -275,10 +275,12 @@ value_t Search_float(BPlusTree tree, my_key_t_float key)
             return leaf->children[i].value;
         }
     }
+#ifndef DEBUG
     if (i == (int)leaf->n)
     {
         printf("The key (%f) is not in the BPlusTree\n", key.key);
     }
+#endif
 #ifdef NOBUFFER
     free(leaf);
 #endif
