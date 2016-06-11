@@ -12,8 +12,11 @@
 #define BLOCK_OFFSET META_OFFSET + BLOCK_SIZE
 
 // ============= other modules can invoke the following functions ==============
+// @brief int Insert_int(BPlusTree tree, my_key_t_int key, value_t value); return 0 if succeeded
 #define InsertIndex(a, b, c) _Generic(b, my_key_t_int: Insert_int, my_key_t_float: Insert_float, my_key_t_str: Insert_str)(a, b, c)
+// @brief value_t Search_int(BPlusTree tree, my_key_t_int key); return the value of the tuple we found
 #define SearchIndex(a, b) _Generic(b, my_key_t_int: Search_int, my_key_t_float: Search_float, my_key_t_str: Search_str)(a, b)
+// @brief int Remove_int(BPlusTree tree, my_key_t_int key); return 0 if succeeded
 #define RemoveIndex(a, b) _Generic(b, my_key_t_int: Remove_int, my_key_t_float: Remove_float, my_key_t_str: Remove_str)(a, b)
 // =============================================================================
 
