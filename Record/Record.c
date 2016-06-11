@@ -1201,7 +1201,7 @@ int GetTree(int indexNum, BPlusTree tree)
     if ('\0' == tree->path[0])  // Oops, an invalid index file
     {
         printf("[ERROR] index file not found. You need to make sure that after drop a index, the meta data of a table should be updated.\n");
-        return 0;
+        return 1;
     }
     // read the meta data of tree first
     meta = (meta_t *)ReadBlock(tree->path, META_OFFSET, BLOCK_SIZE);
@@ -1210,7 +1210,7 @@ int GetTree(int indexNum, BPlusTree tree)
 #ifdef NOBUFFER
     free(meta);
 #endif
-    return 1;
+    return 0;
 }
 
 void UpdateTupleIndex(Table table, char *tuple, off_t newOffset)

@@ -37,16 +37,18 @@ struct StrFilterType
     StrFilter next;
 };
 // ================ other modules can invoke the following functions ===========
-// @brief create a file XXX_record.db and write meta data into the first block of the file
+// @brief create a file XXX_record.db and write meta data into the first block of the file, return 0 if succeeded
 int CreateTable(Table table);
-// @brief simply remove the record file and we need catalog to update tables information
+// @brief simply remove the record file and we need catalog to update tables information, return 0 if succeeded
 int RemoveTable(Table table);
-// @brief search tuples and project, if projection == NULL, then select * from ...
+// @brief search tuples and project, if projection == NULL, then select * from .., return 0 if succeeded
 int SearchTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter, int *projection);
-// @brief return the offset of the tuple in record file
+// @brief return the offset of the tuple in record file, return the offset of the tuple inserted
 off_t InsertTuple(Table table, char *tuple);
-// @brief Delete a tuple and move the last tuple to fill the space
+// @brief Delete a tuple and move the last tuple to fill the space, return the number of affected rows
 int DeleteTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);
+// @brief find the index file and store the meta data in tree, return 0 if succeeded
+int GetTree(int indexNum, BPlusTree tree);
 // =============================================================================
 // @brief try to insert the tuple in all related BPlusTree to test whether it can be inserted
 int IsValidToInsert(Table table, char *tuple, off_t offset);
