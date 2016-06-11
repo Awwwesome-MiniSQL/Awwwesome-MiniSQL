@@ -65,7 +65,7 @@ int main()
     InsertTuple(&table, tuple);
     */
 
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < 10; i++)
     {
         *(float *)tuple = (float)(i + 0.3);
         strcpy(tuple + 4, "ABC");
@@ -77,12 +77,12 @@ int main()
     strcpy(tuple + 4, "A");
     struct FloatFilterType intF;
     intF.attrIndex = 0;
-    intF.cond = NOTEQUAL;
+    intF.cond = LARGER;
     intF.src = (float)4.3;
     intF.next = NULL;
     SearchTuples(&table, NULL, NULL, NULL, NULL);
     SearchTuples(&table, NULL, &intF, NULL, NULL);
-    DeleteTuples(&table, NULL, &intF, NULL);
+    DeleteTuples(&table, NULL, NULL, NULL);
     //InsertTuple(&table, tuple);
 
     //RemoveTable(&table);

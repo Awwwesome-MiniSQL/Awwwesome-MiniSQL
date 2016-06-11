@@ -353,7 +353,7 @@ int CheckTuple(char *tmpTuple, Table table, IntFilter intF, FloatFilter floatF, 
 
 int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF)  // Delete a tuple and move the last tuple to fill the space
 {
-    int i, j, blockNum, tmpRecordsNum, isLastBlockNotFull;
+    int i, j, blockNum, tmpRecordsNum, isLastBlockNotFull, count = 0;
     off_t offset;
 
     char *tmpTuple, *lastTuple, *curBlock, *lastBlock;
@@ -375,6 +375,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
             {
                 continue;
             }
+            count++;
             RemoveTupleIndex(table, tmpTuple);
             // delete current tuple from the table
             if (j * table->recordsPerBlock + tmpRecordsNum + 1 != table->recordNum)  // the tuple to delete is not the last tuple, we move the last tuple to the empty position
@@ -390,20 +391,26 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
                 }
                 lastTuple = lastBlock + (table->recordNum - 1) % table->recordsPerBlock * table->recordSize;
                 // make sure that the last tuple will not be deleted
-                while (1 == CheckTuple(lastTuple, table, intF, floatF, strF))
+                while (1 == CheckTuple(lastTuple, table, intF, floatF, strF) && (table->recordNum - 1) % table->recordsPerBlock * table->recordSize != j * BLOCK_SIZE + i * table->recordSize)  // while the last tuple is to delete and current tuple != the last one
                 {
+                    count++;
                     RemoveTupleIndex(table, tmpTuple);
                     table->recordNum--;
-                    if (table->recordNum <= 1)  // only tmpTuple remains
+                    isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
+                    blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
+                    tmpRecordsNum = (j == blockNum - 1 && isLastBlockNotFull) ? isLastBlockNotFull : table->recordsPerBlock;  // number of records in current block
+                    if (table->recordNum <= 1)  // only tmpTuple remains (which will be deleted, too), hence, the table is empty
                     {
+                        table->recordNum = 0;
 #ifdef NOBUFFER
-                       if (lastBlock != curBlock)
-                       {
-                           free(lastBlock);
-                       }
-                       free(curBlock);
+                        if (lastBlock != curBlock)
+                        {
+                            free(lastBlock);
+                        }
+                        free(curBlock);
 #endif
-                        return 0;
+                        printf("Query OK, %d row(s) affected\n\n", count);
+                        return count;
                     }
                     if (0 == table->recordNum % table->recordsPerBlock)
                     {
@@ -434,7 +441,8 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
         free(curBlock);
 #endif
     }
-    return 0;
+    printf("Query OK, %d row(s) affected.\n\n", count);
+    return count;
 }
 
 void PrintTableHeader(Table table, int *projection, int *attrMaxLen)
