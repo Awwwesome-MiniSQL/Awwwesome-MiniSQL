@@ -3,5 +3,5 @@
 
 void GetIndexFileName(int indexNum, char *indexFileName)
 {
-    strcpy(indexFileName, "");
+    strcpy(indexFileName, "student_name_index.db");
 }

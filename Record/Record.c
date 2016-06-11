@@ -11,7 +11,7 @@
 
 int CreateTable(Table table)
 {
-    //@TODO we need Catalog manager here to check whether in the database
+    //@TODO we need Catalog manager here to check whether the table exists
     FILE *fp;
     char fileName[MAX_STRING_LENGTH];
     int i;
@@ -39,6 +39,19 @@ int CreateTable(Table table)
     fp = fopen(fileName, "wb");
     fclose(fp);
     WriteBlock(fileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
+    // initialize a BPlusTree
+    struct tree_t tree;
+    if (table->primaryKey >= 0)
+    {
+        strcpy(fileName, table->name);
+        strcat(fileName, "_");
+        strcat(fileName, table->attributes[table->primaryKey].name);
+        strcat(fileName, "_index.db");
+        fp = fopen(fileName, "wb");
+        fclose(fp);
+        // @TODO ask Catalog to add the index
+        InitTree(&tree, fileName, table->attributes[table->primaryKey].type);
+    }
     return 0;
 }
 
@@ -61,7 +74,6 @@ int SearchTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
     StrFilter curSF = strF;
     enum CmpCond cond;
     struct tree_t tree;
-    meta_t *meta;
     my_key_t_int intKey;
     my_key_t_float floatKey;
     my_key_t_str strKey;
@@ -118,16 +130,7 @@ int SearchTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
     // search with index or linear scan
     if (indexNum >= 0 && NOTEQUAL != cond)  // use index
     {
-        GetIndexFileName(indexNum, tree.path);
-        if ('\0' == tree.path[0])  // Oops, an invalid index file
-        {
-           printf("[ERROR] index file not found. You need to make sure that after drop a index, the meta data of a table should be updated.\n");
-           return 0;
-        }
-        // read the meta data of tree first
-        meta = (meta_t *)ReadBlock(tree.path, META_OFFSET, BLOCK_SIZE);
-        // @NOTE be careful, not sure it is correct or not
-        memcpy((void *)&tree.meta, meta, sizeof(meta_t));
+        GetTree(indexNum, &tree);
         // found the index file, then generate the key
         if (curIF)  // int key
         {
@@ -144,15 +147,13 @@ int SearchTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
             strcpy(strKey.key, curSF->src);
             count = TraverseSearch_str(table, projection, &tree, strKey, cond, attrMaxLen, intF, floatF, strF);
         }
-
-#ifdef NOBUFFER
-        free(meta);
-#endif
     }
     else  // we have to do linear scan
     {
         count = LinearScan(table, projection, intF, floatF, strF, attrMaxLen);
     }
+    PrintDashes(table, projection, attrMaxLen);
+    printf("\n%d row(s) in set\n", count);
     return count;
 }
 
@@ -163,12 +164,12 @@ off_t InsertTuple(Table table, char *tuple)
     char fileName[MAX_STRING_LENGTH];
     strcpy(fileName, table->name);
     strcat(fileName, "_record.db");
-    // compute the offset of the record to insert
+    // compute the offset of the block of record to insert
     offset = TABLE_RECORD_OFFSET + table->recordNum / table->recordsPerBlock * BLOCK_SIZE;
     insertPos = table->recordNum % table->recordsPerBlock * table->recordSize;
     if (!IsValidToInsert(table, tuple, offset + insertPos))
     {
-        printf("[ERROR] Cannot insert tuple because of constraints\n");
+        printf("[ERROR] Cannot insert tuple because of constrains\n");
         return 0;
     }
     if (table->recordNum % table->recordsPerBlock)
@@ -186,7 +187,7 @@ off_t InsertTuple(Table table, char *tuple)
 #endif
     table->recordNum++;
     WriteBlock(fileName, table, TABLE_META_OFFSET, BLOCK_SIZE);
-    // @TODO InsertTupleIndex
+    InsertTupleIndex(table, tuple, offset + insertPos);
     return offset + insertPos;
 }
 
@@ -374,7 +375,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
             {
                 continue;
             }
-            // @TODO remove tuple's indices
+            RemoveTupleIndex(table, tmpTuple);
             // delete current tuple from the table
             if (j * table->recordsPerBlock + tmpRecordsNum + 1 != table->recordNum)  // the tuple to delete is not the last tuple, we move the last tuple to the
             {
@@ -388,7 +389,15 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
                     lastBlock = curBlock;
                 }
                 lastTuple = lastBlock + (table->recordNum - 1) % table->recordsPerBlock * table->recordSize;
-                memcpy(curBlock, lastTuple, table->recordSize);
+                memcpy(tmpTuple, lastTuple, table->recordSize);
+                UpdateTupleIndex(table, tmpTuple, offset + i * table->recordSize);
+                WriteBlock(fileName, curBlock, offset, BLOCK_SIZE);
+#ifdef NOBUFFER
+               if (lastBlock != curBlock)
+               {
+                   free(lastBlock);
+               }
+#endif
             }
             table->recordNum--;
             isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
@@ -469,7 +478,6 @@ value_t SearchUniqueAttr(Table table, IntFilter intF, FloatFilter floatF, StrFil
     off_t offset;
     value_t tupleOffset;
     struct tree_t tree;
-    meta_t *meta;
     char *tmpTuple, *curBlock;
     char fileName[MAX_STRING_LENGTH];
     my_key_t_int intKey;
@@ -488,19 +496,9 @@ value_t SearchUniqueAttr(Table table, IntFilter intF, FloatFilter floatF, StrFil
     {
         indexNum = table->attributes[strF->attrIndex].index;
     }
-    // @TODO then ask catalog to find the index file
     if (indexNum >= 0)
     {
-        GetIndexFileName(indexNum, tree.path);
-        if ('\0' == tree.path[0])  // Oops, an invalid index file
-        {
-           printf("[ERROR] index file not found. You need to make sure that after drop a index, the meta data of a table should be updated.\n");
-           return 0;
-        }
-        // read the meta data of tree first
-        meta = (meta_t *)ReadBlock(tree.path, META_OFFSET, BLOCK_SIZE);
-        // @NOTE be careful, not sure it is correct or not
-        memcpy((void *)&tree.meta, meta, sizeof(meta_t));
+        GetTree(indexNum, &tree);
         // found the index file, then generate the key
         if (intF)  // int key
         {
@@ -517,9 +515,6 @@ value_t SearchUniqueAttr(Table table, IntFilter intF, FloatFilter floatF, StrFil
             strcpy(strKey.key, strF->src);
             tupleOffset = SearchIndex(&tree, strKey);
         }
-#ifdef NOBUFFER
-        free(meta);
-#endif
         return tupleOffset;
     }
     else  // we have to do linear scan
@@ -695,32 +690,32 @@ int TraverseSearch_float(Table table, int *projection, BPlusTree tree, my_key_t_
     {
         if (0 == leaf->next)  // the end of the tree
         {
-    #ifdef NOBUFFER
-                free(leaf);
-    #endif
+#ifdef NOBUFFER
+            free(leaf);
+#endif
             return count;
         }
         leafOffset = leaf->next;
         i = 0;
-    #ifdef NOBUFFER
+#ifdef NOBUFFER
         free(leaf);
-    #endif
+#endif
         leaf = (leaf_t_float *)ReadBlock(tree->path, leafOffset, BLOCK_SIZE);
     }
     else if (0 == i && 0 != compareRes && (SMALLERE == cond || SMALLER == cond))  // look up the left block
     {
         if (0 == leaf->prev)
         {
-    #ifdef NOBUFFER
+#ifdef NOBUFFER
             free(leaf);
-    #endif
+#endif
             return count;
         }
         leafOffset = leaf->prev;
         i = (int)leaf->n - 1;
-    #ifdef NOBUFFER
+#ifdef NOBUFFER
         free(leaf);
-    #endif
+#endif
         leaf = (leaf_t_float *)ReadBlock(tree->path, leafOffset, BLOCK_SIZE);
     }
 
@@ -744,9 +739,9 @@ int TraverseSearch_float(Table table, int *projection, BPlusTree tree, my_key_t_
         }
         if (i < 0)  // no tuples to search any more
         {
-    #ifdef NOBUFFER
+#ifdef NOBUFFER
             free(leaf);
-    #endif
+#endif
             return count;
         }
     }
@@ -761,9 +756,9 @@ int TraverseSearch_float(Table table, int *projection, BPlusTree tree, my_key_t_
                 }
                 i = Move2NextChild_float(tree, leaf, i);
             }
-    #ifdef NOBUFFER
+#ifdef NOBUFFER
             free(leaf);
-    #endif
+#endif
             break;
         case SMALLER:
         case SMALLERE: // treat SMALLERE and SMALLER as LARGER because EQUAL has been dealt with already
@@ -775,9 +770,9 @@ int TraverseSearch_float(Table table, int *projection, BPlusTree tree, my_key_t_
                 }
                 i = Move2PreviousChild_float(tree, leaf, i);
             }
-    #ifdef NOBUFFER
+#ifdef NOBUFFER
             free(leaf);
-    #endif
+#endif
             break;
         default: break;
     }
@@ -921,7 +916,7 @@ void ComputeAttrsMaxLen(Table table, int *projection, int *attrMaxLen)
 
 int LinearScan(Table table, int *projection, IntFilter intF, FloatFilter floatF, StrFilter strF, int *attrMaxLen)
 {
-    int i, j, blockNum, tmpRecordsNum, isLastBlockNotFull, count;
+    int i, j, blockNum, tmpRecordsNum, isLastBlockNotFull, count = 0;
     off_t offset;
     char *tmpTuple, *curBlock;
     char fileName[MAX_STRING_LENGTH];
@@ -945,7 +940,6 @@ int LinearScan(Table table, int *projection, IntFilter intF, FloatFilter floatF,
             PrintTuple(table, tmpTuple, projection, attrMaxLen);
             count++;
         }
-        PrintDashes(table, projection, attrMaxLen);
 #ifdef NOBUFFER
         free(curBlock);
 #endif
@@ -1059,4 +1053,95 @@ int Move2PreviousChild_str(BPlusTree tree, leaf_t_str *leaf, int i)
 #endif
     leaf = (leaf_t_str *)ReadBlock(tree->path, leaf->prev, sizeof(leaf_t_str));
     return 0;
+}
+
+void InsertTupleIndex(Table table, char *tuple, off_t offset)
+{
+    int i, attrOffset[MAX_ATTRIBUTE_NUM];
+    struct tree_t tree;
+    my_key_t_int intKey;
+    my_key_t_float floatKey;
+    my_key_t_str strKey;
+    ComputeAttrsOffset(table, attrOffset);
+    for (i = 0; i < table->attrNum; i++)  // for each attribute
+    {
+        if (table->attributes[i].index >= 0)  // if the attribute has an index
+        {
+            GetTree(table->attributes[i].index, &tree);
+            // generate filter and search the unique attribute value
+            switch (table->attributes[i].type)
+            {
+                case intType:
+                    intKey.key = *(int *)(tuple + attrOffset[i]);
+                    InsertIndex(&tree, intKey, offset);
+                    break;
+                case floatType:
+                    floatKey.key = *(float *)(tuple + attrOffset[i]);
+                    InsertIndex(&tree, floatKey, offset);
+                    break;
+                case stringType:
+                    strcpy(strKey.key, tuple + attrOffset[i]);
+                    InsertIndex(&tree, strKey, offset);
+                    break;
+            }
+        }
+    }
+}
+
+void RemoveTupleIndex(Table table, char *tuple)
+{
+    int i, attrOffset[MAX_ATTRIBUTE_NUM];
+    struct tree_t tree;
+    my_key_t_int intKey;
+    my_key_t_float floatKey;
+    my_key_t_str strKey;
+    ComputeAttrsOffset(table, attrOffset);
+    for (i = 0; i < table->attrNum; i++)  // for each attribute
+    {
+        if (table->attributes[i].index >= 0)  // if the attribute has an index
+        {
+            GetTree(table->attributes[i].index, &tree);
+            // generate filter and search the unique attribute value
+            switch (table->attributes[i].type)
+            {
+                case intType:
+                    intKey.key = *(int *)(tuple + attrOffset[i]);
+                    RemoveIndex(&tree, intKey);
+                    break;
+                case floatType:
+                    floatKey.key = *(float *)(tuple + attrOffset[i]);
+                    RemoveIndex(&tree, floatKey);
+                    break;
+                case stringType:
+                    strcpy(strKey.key, tuple + attrOffset[i]);
+                    RemoveIndex(&tree, strKey);
+                    break;
+            }
+        }
+    }
+}
+
+int GetTree(int indexNum, BPlusTree tree)
+{
+    meta_t *meta;
+    GetIndexFileName(indexNum, tree->path);
+    if ('\0' == tree->path[0])  // Oops, an invalid index file
+    {
+        printf("[ERROR] index file not found. You need to make sure that after drop a index, the meta data of a table should be updated.\n");
+        return 0;
+    }
+    // read the meta data of tree first
+    meta = (meta_t *)ReadBlock(tree->path, META_OFFSET, BLOCK_SIZE);
+    // @NOTE be careful, not sure it is correct or not
+    memcpy((void *)&tree->meta, meta, sizeof(meta_t));
+#ifdef NOBUFFER
+    free(meta);
+#endif
+    return 1;
+}
+
+void UpdateTupleIndex(Table table, char *tuple, off_t newOffset)
+{
+    RemoveTupleIndex(table, tuple);
+    InsertTupleIndex(table, tuple, newOffset);
 }

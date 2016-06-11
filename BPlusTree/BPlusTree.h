@@ -10,9 +10,12 @@
 // the following definition of offsets might be replaced in the real work
 #define META_OFFSET 0  // this means one file contains exactly one tree, and the beginning of a file is the meta data
 #define BLOCK_OFFSET META_OFFSET + BLOCK_SIZE
+
+// ============= other modules can invoke the following functions ==============
 #define InsertIndex(a, b, c) _Generic(b, my_key_t_int: Insert_int, my_key_t_float: Insert_float, my_key_t_str: Insert_str)(a, b, c)
 #define SearchIndex(a, b) _Generic(b, my_key_t_int: Search_int, my_key_t_float: Search_float, my_key_t_str: Search_str)(a, b)
 #define RemoveIndex(a, b) _Generic(b, my_key_t_int: Remove_int, my_key_t_float: Remove_float, my_key_t_str: Remove_str)(a, b)
+// =============================================================================
 
 #define TREE_ORDER_float  ((BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t_float))
 #define TREE_ORDER_int  ((BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t_int))
@@ -125,10 +128,10 @@ struct leaf_t_str
 };
 // ============= other modules can invoke the following functions ==============
 void InitTree(BPlusTree tree, char *path, enum DataType type);
+// =============================================================================
 void InitTree_int(BPlusTree tree, char *path, enum DataType type);
 void InitTree_float(BPlusTree tree, char *path, enum DataType type);
 void InitTree_str(BPlusTree tree, char *path, enum DataType type);
-// =============================================================================
 int IntKeyCmp(int A, int B);
 int FloatKeyCmp(float A, float B);
 int StringKeyCmp(char *A, char *B);

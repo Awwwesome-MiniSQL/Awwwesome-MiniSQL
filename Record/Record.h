@@ -71,5 +71,8 @@ int Move2NextChild_float(BPlusTree tree, leaf_t_float *leaf, int i);
 int Move2PreviousChild_float(BPlusTree tree, leaf_t_float *leaf, int i);
 int Move2NextChild_str(BPlusTree tree, leaf_t_str *leaf, int i);
 int Move2PreviousChild_str(BPlusTree tree, leaf_t_str *leaf, int i);
-
+void InsertTupleIndex(Table table, char *tuple, off_t offset);
+void RemoveTupleIndex(Table table, char *tuple);
+int GetTree(int indexNum, BPlusTree tree);
+void UpdateTupleIndex(Table table, char *tuple, off_t newOffset);
 #endif

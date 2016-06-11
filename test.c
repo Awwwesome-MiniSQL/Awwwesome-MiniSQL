@@ -21,7 +21,7 @@ int main()
     table.attributes[0].type = intType;
     table.attributes[0].size = 4;
     table.attributes[0].unique = 1;
-    table.attributes[0].index = -1;
+    table.attributes[0].index = 0;
     table.attrNum++;
     // attribute 1: ID
     strcpy(table.attributes[1].name, "ID");
@@ -74,10 +74,18 @@ int main()
     *(int *)tuple = 4;
     printf("Dengdeng\n");
     strcpy(tuple + 4, "A");
-    InsertTuple(&table, tuple);
+    struct IntFilterType intF;
+    intF.attrIndex = 0;
+    intF.cond = EQUAL;
+    intF.src = 1;
+    intF.next = NULL;
+    SearchTuples(&table, NULL, NULL, NULL, NULL);
+    SearchTuples(&table, &intF, NULL, NULL, NULL);
+    DeleteTuples(&table, &intF, NULL, NULL);
+    //InsertTuple(&table, tuple);
 
     //RemoveTable(&table);
-    printf("recordsPerBlock: %d\n", table.recordsPerBlock);
+    //printf("recordsPerBlock: %d\n", table.recordsPerBlock);
     free(tuple);
     SearchTuples(&table, NULL, NULL, NULL, NULL);
     return 0;
