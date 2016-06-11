@@ -402,6 +402,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
             table->recordNum--;
             isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
             blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
+            tmpRecordsNum = (j == blockNum - 1 && isLastBlockNotFull) ? isLastBlockNotFull : table->recordsPerBlock;  // number of records in current block
         }
 #ifdef NOBUFFER
         free(curBlock);
