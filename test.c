@@ -1,141 +1,92 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 #include "MiniSQL.h"
-#include "BPlusTree.h"
+#include "Record/Record.h"
+#include "BPlusTree/BPlusTree.h"
+#include "BPlusTree/BPlusTreeInt.h"
+#include "BPlusTree/BPlusTreeFloat.h"
+#include "BPlusTree/BPlusTreeStr.h"
+#include "Catalog/Catalog.h"
+
 int main()
 {
-    FILE *fp;
-    meta_t *meta;
-    leaf_t *leaf;
-    internal_t *root;
-    my_key_t newKey;
-    struct tree_t tree;
-    char fileName[] = "hello.db";
-    int i, j, n;
-    off_t offset;
-    scanf("%d", &n);
-    fp = fopen(fileName, "w");
-    fclose(fp);
-    // test InitTree
-    InitTree(&tree, fileName, intType);
-    meta = (meta_t *)ReadBlock(fileName, META_OFFSET, sizeof(meta_t));
-    printf("meta data:\n");
-    printf("meta.order: %ld\nmeta.valueSize: %ld\nmeta.keySize: %ld\nmeta.internalNum: %ld\nmeta.leafNum: %ld\nmeta.height: %ld\nmeta.slot: %ld\nmeta.rootOffset: %ld\nmeta.leafOffset: %ld\n", meta->order, meta->valueSize, meta->keySize, meta->internalNum, meta->leafNum, meta->height, meta->slot, meta->rootOffset, meta->leafOffset);
-    printf("=================================================\n");
-    // test insert
-    //for (i = n; i >= 0; i--)
-    for (i = 1; i < 2 * n; i = i + 2)
+    struct TableRecord table;
+    int i;
+    // get input from interpreter
+    // attribute 0: name
+    strcpy(table.name, "student");
+    strcpy(table.attributes[0].name, "name");
+    table.attrNum = 0;
+    table.attributes[0].type = intType;
+    table.attributes[0].size = 4;
+    table.attributes[0].unique = 1;
+    table.attributes[0].index = 0;
+    table.attrNum++;
+    // attribute 1: ID
+    strcpy(table.attributes[1].name, "ID");
+    table.attributes[1].type = stringType;
+    table.attributes[1].size = 4;
+    table.attributes[1].unique = 0;
+    table.attributes[1].index = -1;
+    table.primaryKey = 0;
+    table.recordSize = 0;
+    table.attrNum++;
+    // compute record
+    for (i = 0; i < table.attrNum; i++)
     {
-    #ifndef DEBUG
-        printf("i: %d\n", i);
-    #endif
-        newKey.key = i;
-        Insert(&tree, newKey, i);
+        table.recordSize += table.attributes[i].size;
     }
-
-    //for (i = 0; i < 2 * n; i = i + 2)
-    for (i = 2 * n - 2; i >= 0; i = i - 2)
-    {
-    #ifndef DEBUG
-        printf("i: %d\n", i);
-    #endif
-        newKey.key = i;
-        Insert(&tree, newKey, i);
-    }
-
+    CreateTable(&table);
+    char *tuple = (char *)malloc(table.recordSize);
+    // insert int primary key
     /*
-    for (i = 0; i < n; i++)
+    for (i = 0; i < 1000; i++)
     {
-        newKey.key = i;
-        Insert(&tree, newKey, i);
+        *(int *)tuple = i;
+        *(int *)(tuple + 4) = i;
+        InsertTuple(&table, tuple);
     }
+    *(int *)tuple = 4;
+    *(int *)(tuple + 4) = 998;
+    InsertTuple(&table, tuple);
+    free(tuple);
     */
-    // test search
-    newKey.key = n / 2;
-    printf("value of n / 2: %ld\n", Search(&tree, newKey));
-    newKey.key = 0x12345678;
-    printf("value of 0x12345678: %ld\n", Search(&tree, newKey));
-    newKey.key = 9;
-    printf("value of 9: %ld\n", Search(&tree, newKey));
-    newKey.key = 11;
-    printf("value of 11: %ld\n", Search(&tree, newKey));
-    newKey.key = 12;
-    printf("value of 12: %ld\n", Search(&tree, newKey));
-    newKey.key = 13;
-    printf("value of 13: %ld\n", Search(&tree, newKey));
-    //newKey.key = 6666;
-    //printf("Insert faile? %d\n", Insert(&tree, newKey, 0x12345678));
-    //newKey.key = 4112;
-    //printf("Insert faile? %d\n", Insert(&tree, newKey, 0x4112));
-    printf("=================================================\n");
-    meta = (meta_t *)ReadBlock(fileName, META_OFFSET, sizeof(meta_t));
-    leaf = (leaf_t *)ReadBlock(fileName, meta->leafOffset, sizeof(leaf_t));
-    printf("leaf data:\n");
-    printf("leaf->parent: %ld\nleaf->next: %ld\nleaf->prev: %ld\nleaf->n: %ld\nleaf->children[0].value: %ld\nleaf->children[0].key.key: %d\n", leaf->parent, leaf->next, leaf->prev, leaf->n, leaf->children[0].value, leaf->children[0].key.key);
-    printf("=================================================\n");
-    offset = meta->leafOffset;
-    for (j = 0; j < (int)meta->leafNum; j++)
+    // insert float primary key
+    /*
+    for (i = 0; i < 10; i++)
     {
-        printf("offset: %ld\n", offset);
-        for (i = 0; i < (int)leaf->n; i++)
-        {
-            printf("%ld ", leaf->children[i].value);
-        }
-        printf("\n\n");
-        offset = leaf->next;
-#ifdef NOBUFFER
-        free(leaf);
-#endif
-        leaf = (leaf_t *)ReadBlock(fileName, offset, sizeof(leaf_t));
+        *(int *)tuple = i;
+        *(float *)(tuple + 4) = (float)(i + 0.1);
+        InsertTuple(&table, tuple);
     }
-    printf("\n\n");
-    // test Remove
-    //for (i = 0; i < 2 * n; i++)
-    for (i = n; i >= 0; i--)
+    *(int *)tuple = 4;
+    *(float *)(tuple + 4) = (float)(998 + 0.1);
+    InsertTuple(&table, tuple);
+    */
+
+    for (i = 0; i < 10; i++)
     {
-        newKey.key = i;
-        printf("Remove %d return: %d\n", i, Remove(&tree, newKey));
+        *(int *)tuple = i;
+        strcpy(tuple + 4, "ABC");
+        InsertTuple(&table, tuple);
     }
-    for (i = n + 1; i < 2 * n; i++)
-    {
-        newKey.key = i;
-        printf("Remove %d return: %d\n", i, Remove(&tree, newKey));
-    }
-    printf("=================================================\n");
-    meta = (meta_t *)ReadBlock(fileName, META_OFFSET, sizeof(meta_t));
-    leaf = (leaf_t *)ReadBlock(fileName, meta->leafOffset, sizeof(leaf_t));
-    printf("leaf data:\n");
-    printf("leaf->parent: %ld\nleaf->next: %ld\nleaf->prev: %ld\nleaf->n: %ld\nleaf->children[0].value: %ld\nleaf->children[0].key.key: %d\n", leaf->parent, leaf->next, leaf->prev, leaf->n, leaf->children[0].value, leaf->children[0].key.key);
-    printf("=================================================\n");
-    offset = meta->leafOffset;
-    for (j = 0; j < (int)meta->leafNum; j++)
-    {
-        printf("offset: %ld\n", offset);
-        for (i = 0; i < (int)leaf->n; i++)
-        {
-            printf("%ld ", leaf->children[i].value);
-        }
-        printf("\n\n");
-        offset = leaf->next;
-#ifdef NOBUFFER
-        free(leaf);
-#endif
-        leaf = (leaf_t *)ReadBlock(fileName, offset, sizeof(leaf_t));
-    }
-    printf("\n\n");
-    printf("=================================================\n");
-    // test ReadBlock
-    printf("meta data:\n");
-    printf("meta.order: %ld\nmeta.valueSize: %ld\nmeta.keySize: %ld\nmeta.internalNum: %ld\nmeta.leafNum: %ld\nmeta.height: %ld\nmeta.slot: %ld\nmeta.rootOffset: %ld\nmeta.leafOffset: %ld\n", meta->order, meta->valueSize, meta->keySize, meta->internalNum, meta->leafNum, meta->height, meta->slot, meta->rootOffset, meta->leafOffset);
-    // test root
-    root = (internal_t *)ReadBlock(fileName, meta->rootOffset, sizeof(internal_t));
-    printf("=================================================\n");
-    printf("root data: \n");
-    printf("root->n: %ld\n", root->n);
-#ifdef NOBUFFER
-    free(leaf);
-    free(root);
-#endif
+    *(int *)tuple = 4;
+    printf("Dengdeng\n");
+    strcpy(tuple + 4, "A");
+    struct IntFilterType intF;
+    intF.attrIndex = 0;
+    intF.cond = EQUAL;
+    intF.src = 1;
+    intF.next = NULL;
+    SearchTuples(&table, NULL, NULL, NULL, NULL);
+    SearchTuples(&table, &intF, NULL, NULL, NULL);
+    DeleteTuples(&table, &intF, NULL, NULL);
+    //InsertTuple(&table, tuple);
+
+    //RemoveTable(&table);
+    //printf("recordsPerBlock: %d\n", table.recordsPerBlock);
+    free(tuple);
+    SearchTuples(&table, NULL, NULL, NULL, NULL);
     return 0;
 }
