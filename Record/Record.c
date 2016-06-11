@@ -377,7 +377,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
             }
             RemoveTupleIndex(table, tmpTuple);
             // delete current tuple from the table
-            if (j * table->recordsPerBlock + tmpRecordsNum + 1 != table->recordNum)  // the tuple to delete is not the last tuple, we move the last tuple to the
+            if (j * table->recordsPerBlock + tmpRecordsNum + 1 != table->recordNum)  // the tuple to delete is not the last tuple, we move the last tuple to the empty position
             {
                 // @NOTE not going to truncate the file because it depends on systems
                 if (j < blockNum - 1)  // not in the last block
@@ -389,6 +389,32 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
                     lastBlock = curBlock;
                 }
                 lastTuple = lastBlock + (table->recordNum - 1) % table->recordsPerBlock * table->recordSize;
+                // make sure that the last tuple will not be deleted
+                while (1 == CheckTuple(lastTuple, table, intF, floatF, strF))
+                {
+                    RemoveTupleIndex(table, tmpTuple);
+                    table->recordNum--;
+                    if (table->recordNum <= 1)  // only tmpTuple remains
+                    {
+#ifdef NOBUFFER
+                       if (lastBlock != curBlock)
+                       {
+                           free(lastBlock);
+                       }
+                       free(curBlock);
+#endif
+                        return 0;
+                    }
+                    if (0 == table->recordNum % table->recordsPerBlock)
+                    {
+                        blockNum--;
+#ifdef NOBUFFER
+                        free(lastBlock);
+#endif
+                        lastBlock = (char *)ReadBlock(fileName, TABLE_RECORD_OFFSET + (blockNum - 1) * BLOCK_SIZE, BLOCK_SIZE);
+                    }
+                    lastTuple = lastBlock + (table->recordNum - 1) % table->recordsPerBlock * table->recordSize;
+                }
                 memcpy(tmpTuple, lastTuple, table->recordSize);
                 UpdateTupleIndex(table, tmpTuple, offset + i * table->recordSize);
                 WriteBlock(fileName, curBlock, offset, BLOCK_SIZE);

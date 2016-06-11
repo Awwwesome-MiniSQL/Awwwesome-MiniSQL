@@ -65,7 +65,7 @@ int main()
     InsertTuple(&table, tuple);
     */
 
-    for (i = 0; i < 10; i++)
+    for (i = 0; i < 100; i++)
     {
         *(float *)tuple = (float)(i + 0.3);
         strcpy(tuple + 4, "ABC");
