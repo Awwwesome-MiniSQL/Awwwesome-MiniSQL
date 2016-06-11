@@ -5,7 +5,7 @@ NOT FINISHED YET...
 #include <stdlib.h>
 #include <string.h>
 #include "MiniSQL.h"
-#include "Record.h"
+#include "Record/Record.h"
 int TRUEFLAG=1;
 const int F=-1;
 #define safe(function) do {if(function==F) goto False;if(TRUEFLAG==F) goto False;} while(0)
@@ -85,7 +85,7 @@ char* i_get_and(char* s,int id){//s:"a<=10 and b>2 and c='hello'",id:buffer id, 
                 *p++=s[i];
             }
         }*p=0;
-        strcpy(s,s+i+5); 
+        strcpy(s,s+i+5);
     }
     return t[id];
 }/*TEST:
@@ -94,7 +94,7 @@ char* i_get_and(char* s,int id){//s:"a<=10 and b>2 and c='hello'",id:buffer id, 
     puts(test);             //b>2 and c='hello'
     puts(i_get_and(test,0));   //b > 2
     puts(test);             //c='hello'
-    puts(i_get_and(test,0));   //c = 'hello' 
+    puts(i_get_and(test,0));   //c = 'hello'
     puts(test);             //
 */
 char* i_get_kh(char* s,int id){//Get the content in the (), s:"(xh char(10), ..) ;",id: buffer id, return=t[id]:"xh char(10), .."
@@ -122,7 +122,7 @@ char* trim(char* s){
     return s;
 }/*TEST:
     char test[]="  a, bb  ";
-    puts(trim(test));   
+    puts(trim(test));
 */
 
 
@@ -140,7 +140,7 @@ struct AttributeRecord GetAttribute(Table table,char* name,int* attrIndex){//nam
     int i;struct AttributeRecord x;
     for(i=0;i<table->attrNum;i++)
         if(e(name,table->attributes[i].name)) break;
-    if(i==table->attrNum){sprintf(error_message,"column \"%s\" not found in the table",name);TRUEFLAG=F;return x;} 
+    if(i==table->attrNum){sprintf(error_message,"column \"%s\" not found in the table",name);TRUEFLAG=F;return x;}
     *attrIndex=i;
     return table->attributes[i];
 }
@@ -251,7 +251,7 @@ struct AttributeRecord i_create_table_attribute(char* s){//s:"xh char(10) unique
 int i_create_table(char* table_name,char* s){//table_name:"student", s:"xh char(10) unique, name char(20)"
     struct TableRecord ta;int i=0,j=0;
     strcpy(ta.name,table_name);
-    ta.primaryKey=-1;  
+    ta.primaryKey=-1;
     for(i=0;i<MAX_ATTRIBUTE_NUM;i++) ta.attributes[i].name[0]=0;
     i=0;
     while(!e(s,"")){
@@ -259,7 +259,7 @@ int i_create_table(char* table_name,char* s){//table_name:"student", s:"xh char(
         if(!in("primary key",t[5])) {ta.attributes[i++]=i_create_table_attribute(t[5]);safe2();}//normal one
         else {
             trim(t[5]);
-            if(strstr(t[5],"primary key")==t[5]){//"primary key (xh)" 
+            if(strstr(t[5],"primary key")==t[5]){//"primary key (xh)"
                 char key_name[MAX_NAME_LENGTH]={0};
                 if(in("(",t[5])) sscanf(trim(t[5]+strlen("primary key")),"(%[^)])",key_name);
                 else strcpy(key_name,trim(t[5]+strlen("primary key")));
@@ -285,7 +285,7 @@ int i_create_table(char* table_name,char* s){//table_name:"student", s:"xh char(
     for(j=0;j<ta.attrNum;j++){
         ta.recordSize+=ta.attributes[j].size;
     }
-    ta.recordNum=0;  
+    ta.recordNum=0;
     ta.recordsPerBlock=BLOCK_SIZE/ta.recordSize;
     return CreateTable(&ta);
 False:
@@ -395,23 +395,23 @@ False:
 
 int i_select(char* s){
     int projection[MAX_ATTRIBUTE_NUM],i,j,attrIndex;enum CmpCond cond;
-    struct IntFilterType memory_i[MAX_ATTRIBUTE_NUM];IntFilter pi=NULL,pi_now=NULL;int I_F=-1;//the chain memory from array, pi->chain first node, I_F chain now node index 
+    struct IntFilterType memory_i[MAX_ATTRIBUTE_NUM];IntFilter pi=NULL,pi_now=NULL;int I_F=-1;//the chain memory from array, pi->chain first node, I_F chain now node index
     struct FloatFilterType memory_f[MAX_ATTRIBUTE_NUM];FloatFilter pf=NULL,pf_now=NULL;int F_F=-1;
     struct StrFilterType memory_s[MAX_ATTRIBUTE_NUM];StrFilter ps=NULL,ps_now=NULL;int S_F=-1;
-    
+
     for(i=0;i<MAX_ATTRIBUTE_NUM;i++) projection[i]=-1;
     w(s,1);
     if(!e("from",w(s,2))){ErrorSyntax("select ... from");return F;}
     w(s,2);
-    struct TableRecord table=GetTable(t[2]);safe2(); 
+    struct TableRecord table=GetTable(t[2]);safe2();
     if(e("*",t[1])){
         for(i=0;i<table.attrNum;i++) projection[i]=i;
-    }else{ 
+    }else{
         i=0;
         while(!e(i_get_dh(t[1],3),"")){
             for(j=0;j<table.attrNum;j++)
                 if(e(t[3],table.attributes[j].name)) break;
-            if(j==table.attrNum){sprintf(error_message,"column \"%s\" not found in the table",t[3]);TRUEFLAG=F;return F;} 
+            if(j==table.attrNum){sprintf(error_message,"column \"%s\" not found in the table",t[3]);TRUEFLAG=F;return F;}
             projection[i++]=j;
         }
     }
@@ -471,17 +471,17 @@ int i_select(char* s){
     }
     return SearchTuples(&table,pi,pf,ps,projection);
 False:
-    return F;   
+    return F;
 }
 
 int i_delete(char* s){
     int i,j,attrIndex;enum CmpCond cond;
-    struct IntFilterType memory_i[MAX_ATTRIBUTE_NUM];IntFilter pi=NULL,pi_now=NULL;int I_F=-1;//the chain memory from array, pi->chain first node, I_F chain now node index 
+    struct IntFilterType memory_i[MAX_ATTRIBUTE_NUM];IntFilter pi=NULL,pi_now=NULL;int I_F=-1;//the chain memory from array, pi->chain first node, I_F chain now node index
     struct FloatFilterType memory_f[MAX_ATTRIBUTE_NUM];FloatFilter pf=NULL,pf_now=NULL;int F_F=-1;
     struct StrFilterType memory_s[MAX_ATTRIBUTE_NUM];StrFilter ps=NULL,ps_now=NULL;int S_F=-1;
     if(!e("from",w(s,1))){ErrorSyntax("delete from");return F;}
     w(s,2);
-    struct TableRecord table=GetTable(t[2]);safe2(); 
+    struct TableRecord table=GetTable(t[2]);safe2();
     if(!e(s,"")){
         if(!e(w(s,4),"where")) {ErrorSyntax("delete from ... where");return F;}
         while(!e(i_get_and(s,4),"")){
@@ -538,7 +538,7 @@ int i_delete(char* s){
     }
     return DeleteTuples(&table,pi,pf,ps);
 False:
-    return F;   
+    return F;
 }
 
 void print_error(){
@@ -568,31 +568,31 @@ int main() {
     char sql1[]="create index name_index on student (name)";
     interpreter(sql1);
     puts("========================");
-    
+
     char sql2[]="drop index name_index on student";
     interpreter(sql2);
     puts("========================");
-    
+
     //Create Table
     char sql3[]="create table student (xh char(10) unique primary key,id int,name char(20),major char(30),GPA float);";
     interpreter(sql3);//this is preparing for call insert and select
     puts("========================");
-    
+
     //Insert
     char sql4[]="insert into student values (\"3140105754\",1,\"Chen Yuan\",\"Biology\",3.55)";
     interpreter(sql4);
     puts("========================");
-    
+
     //Select
     char sql5[]="select xh,GPA from student where GPA>4 and id<5 and xh='314' and GPA<5";
     interpreter(sql5);
     puts("========================");
-    
+
     //Delete
     char sql6[]="delete from student where GPA>4 and id<5 and xh='314' and GPA<5";
     interpreter(sql6);
     puts("========================");
-    
+
     //Drop
     char sql7[]="drop table student";
     interpreter(sql7);
