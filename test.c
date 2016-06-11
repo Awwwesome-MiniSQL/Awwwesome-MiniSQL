@@ -18,7 +18,7 @@ int main()
     strcpy(table.name, "student");
     strcpy(table.attributes[0].name, "name");
     table.attrNum = 0;
-    table.attributes[0].type = intType;
+    table.attributes[0].type = floatType;
     table.attributes[0].size = 4;
     table.attributes[0].unique = 1;
     table.attributes[0].index = 0;
@@ -67,21 +67,22 @@ int main()
 
     for (i = 0; i < 10; i++)
     {
-        *(int *)tuple = i;
+        *(float *)tuple = (float)(i + 0.3);
         strcpy(tuple + 4, "ABC");
         InsertTuple(&table, tuple);
     }
-    *(int *)tuple = 4;
+    i = 4;
+    *(float *)tuple = (float)(i + 0.3);
     printf("Dengdeng\n");
     strcpy(tuple + 4, "A");
-    struct IntFilterType intF;
+    struct FloatFilterType intF;
     intF.attrIndex = 0;
-    intF.cond = EQUAL;
-    intF.src = 1;
+    intF.cond = NOTEQUAL;
+    intF.src = (float)4.3;
     intF.next = NULL;
     SearchTuples(&table, NULL, NULL, NULL, NULL);
-    SearchTuples(&table, &intF, NULL, NULL, NULL);
-    DeleteTuples(&table, &intF, NULL, NULL);
+    SearchTuples(&table, NULL, &intF, NULL, NULL);
+    DeleteTuples(&table, NULL, &intF, NULL);
     //InsertTuple(&table, tuple);
 
     //RemoveTable(&table);

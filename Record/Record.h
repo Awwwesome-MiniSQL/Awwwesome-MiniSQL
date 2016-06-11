@@ -75,4 +75,5 @@ void InsertTupleIndex(Table table, char *tuple, off_t offset);
 void RemoveTupleIndex(Table table, char *tuple);
 int GetTree(int indexNum, BPlusTree tree);
 void UpdateTupleIndex(Table table, char *tuple, off_t newOffset);
+off_t GetTuple(char *fileName, off_t tupleOffset, char **tuple, off_t recordsOffset, char *curBlock);
 #endif
