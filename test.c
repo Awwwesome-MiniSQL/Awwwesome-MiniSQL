@@ -86,18 +86,18 @@ int main()
     nextIF->cond = SMALLERE;
     nextIF->src = 7;
     nextIF->next = NULL;
-    printf("Initial table:\n");
+    printf("minisql> select * from student\n");
     SearchTuples(&table, NULL, NULL, NULL, NULL);
-    printf("select * from student where ID > 4 and ID <= 7\n");
+    printf("minisql> select * from student where ID > 4 and ID <= 7\n");
     SearchTuples(&table, &intF, NULL, NULL, NULL);
-    printf("delete from student where ID > 4\n");
+    printf("minisql> delete from student where ID > 4 and ID <= 7\n");
     DeleteTuples(&table, &intF, NULL, NULL);
     //InsertTuple(&table, tuple);
 
     //RemoveTable(&table);
     //printf("recordsPerBlock: %d\n", table.recordsPerBlock);
     free(tuple);
-    printf("After deleteing tuples that tuple.ID > 4:\n");
+    printf("minisql> select * from student\n");
     SearchTuples(&table, NULL, NULL, NULL, NULL);
     free(nextIF);
     return 0;
