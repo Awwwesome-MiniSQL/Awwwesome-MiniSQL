@@ -49,9 +49,7 @@ struct meta_t
 typedef struct tree_t *BPlusTree;
 struct tree_t
 {
-    //FILE *fp;  // multi-level file handling
-    //int fpLevel; // the level of current file, to avoid open for many times
-    char path[256];  // path to the index file
+    char path[MAX_NAME_LENGTH];  // path to the index file
     meta_t meta;  // meta data
 };
 
@@ -59,24 +57,18 @@ typedef struct my_key_t_int my_key_t_int;  // key type (int, float, varchar)
 struct my_key_t_int
 {
     int key;
-    //float key;
-    //char key[256];
 };
 
 typedef struct my_key_t_float my_key_t_float;  // key type (int, float, varchar)
 struct my_key_t_float
 {
-    //int key;
     float key;
-    //char key[256];
 };
 
 typedef struct my_key_t_str my_key_t_str;  // key type (int, float, varchar)
 struct my_key_t_str
 {
-    //int key;
-    //float key;
-    char key[256];
+    char key[MAX_STRING_LENGTH];
 };
 
 typedef struct record_t_float record_t_float;

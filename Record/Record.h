@@ -33,7 +33,7 @@ struct StrFilterType
 {
     int attrIndex;
     enum CmpCond cond;
-    char src[256];
+    char src[MAX_STRING_LENGTH];
     StrFilter next;
 };
 // ================ other modules can invoke the following functions ===========
