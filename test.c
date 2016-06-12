@@ -76,17 +76,22 @@ int main()
     i = 4;
     *(int *)tuple = i;
     strcpy(tuple + 4, "A");
-    struct IntFilterType intF;
+    struct IntFilterType intF, *nextIF;
     intF.attrIndex = 0;
     intF.cond = LARGER;
     intF.src = 4;
-    intF.next = NULL;
+    nextIF = (struct IntFilterType *)malloc(sizeof(struct IntFilterType));
+    intF.next = nextIF;
+    nextIF->attrIndex = 0;
+    nextIF->cond = SMALLERE;
+    nextIF->src = 7;
+    nextIF->next = NULL;
     printf("Initial table:\n");
     SearchTuples(&table, NULL, NULL, NULL, NULL);
-    printf("Select tuples that tuple.ID > 4:\n");
+    printf("select * from student where ID > 4 and ID <= 7\n");
     SearchTuples(&table, &intF, NULL, NULL, NULL);
-    printf("Deleting tuples that tuple.ID > 4 ...\n");
-    DeleteTuples(&table, NULL, NULL, NULL);
+    printf("delete from student where ID > 4\n");
+    DeleteTuples(&table, &intF, NULL, NULL);
     //InsertTuple(&table, tuple);
 
     //RemoveTable(&table);
@@ -94,5 +99,6 @@ int main()
     free(tuple);
     printf("After deleteing tuples that tuple.ID > 4:\n");
     SearchTuples(&table, NULL, NULL, NULL, NULL);
+    free(nextIF);
     return 0;
 }
