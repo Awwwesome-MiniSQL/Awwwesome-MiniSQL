@@ -1,6 +1,5 @@
 #ifndef BPLUSTREE_H
 #define BPLUSTREE_H
-#define NOBUFFER
 #include "../MiniSQL.h"
 #include <stddef.h>
 #include <stdlib.h>
@@ -20,16 +19,16 @@
 #define RemoveIndex(a, b) _Generic(b, my_key_t_int: Remove_int, my_key_t_float: Remove_float, my_key_t_str: Remove_str)(a, b)
 // =============================================================================
 
-#define TREE_ORDER_float  ((BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t_float))
-#define TREE_ORDER_int  ((BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t_int))
-#define TREE_ORDER_str  ((BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t_str))
+#define TREE_ORDER_float ((BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t_float))
+#define TREE_ORDER_int ((BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t_int))
+#define TREE_ORDER_str ((BLOCK_SIZE - 3 * sizeof(off_t) - sizeof(size_t)) / sizeof(record_t_str))
 // =====================ReadBlock and WriteBlock are not my work ===============
 // @NOTE here we need to invoke Buffer module to read / write blocks
 void *ReadBlock(char *fileName, off_t offset, size_t size);  // return a pointer which points to a block in memory
 int WriteBlock(char *fileName, void *block, off_t offset, size_t size);  // return 1 if succeeded or 0 if not
 // =============================================================================
 // key and value definition
-typedef off_t value_t;  // value type, default int
+typedef off_t value_t;  // value type, default off_t
 
 typedef struct meta_t meta_t;
 struct meta_t
