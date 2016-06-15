@@ -63,7 +63,7 @@ int RemoveTable(Table table)
 
 int SearchTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF, int *projection)  // do linear scan
 {
-    int i, count, indexNum = -1;
+    int i, count;
     int attrMaxLen[MAX_ATTRIBUTE_NUM], fullProjection[MAX_ATTRIBUTE_NUM];
     IntFilter curIF = intF;
     FloatFilter curFF = floatF;
@@ -87,46 +87,52 @@ int SearchTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
     ComputeAttrsMaxLen(table, projection, attrMaxLen);
     PrintTableHeader(table, projection, attrMaxLen);
     // find the first index we can use to search
-    while (curIF)
+    int firstAttrWithIndex = -1;
+    //int indexNum = -1;
+    while (curIF && firstAttrWithIndex < 0)
     {
         if (table->attributes[curIF->attrIndex].index >= 0)
         {
             curFF = NULL;
             curSF = NULL;
-            indexNum = table->attributes[curIF->attrIndex].index;
+            //indexNum = table->attributes[curIF->attrIndex].index;
+            firstAttrWithIndex = curIF->attrIndex;
             cond = curIF->cond;
             break;
         }
         curIF = curIF->next;
     }
-    while (curFF)
+    while (curFF && firstAttrWithIndex < 0)
     {
         if (table->attributes[curFF->attrIndex].index >= 0)
         {
             curIF = NULL;
             curSF = NULL;
-            indexNum = table->attributes[curFF->attrIndex].index;
+            //indexNum = table->attributes[curFF->attrIndex].index;
+            firstAttrWithIndex = curFF->attrIndex;
             cond = curFF->cond;
             break;
         }
         curFF = curFF->next;
     }
-    while (curSF)
+    while (curSF && firstAttrWithIndex < 0)
     {
         if (table->attributes[curSF->attrIndex].index >= 0)
         {
             curIF = NULL;
             curFF = NULL;
-            indexNum = table->attributes[curSF->attrIndex].index;
+            //indexNum = table->attributes[curSF->attrIndex].index;
+            firstAttrWithIndex = curSF->attrIndex;
             cond = curSF->cond;
             break;
         }
         curSF = curSF->next;
     }
     // search with index or linear scan
-    if (indexNum >= 0 && NOTEQUAL != cond && (intF || floatF || strF))  // use index
+    if (firstAttrWithIndex >= 0 && NOTEQUAL != cond && (intF || floatF || strF))  // use index
     {
-        GetTree(indexNum, &tree);
+        sprintf(tree.path, "%s_%s_index.db", table->name, table->attributes[firstAttrWithIndex].name);
+        GetTree(&tree);
         // found the index file, then generate the key
         if (curIF)  // int key
         {
@@ -158,8 +164,7 @@ off_t InsertTuple(Table table, char *tuple)
     off_t offset, insertPos;
     char *node;
     char fileName[MAX_STRING_LENGTH];
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
+    sprintf(fileName, "%s_record.db", table->name);
     // compute the offset of the block of record to insert
     offset = TABLE_RECORD_OFFSET + table->recordNum / table->recordsPerBlock * BLOCK_SIZE;
     insertPos = table->recordNum % table->recordsPerBlock * table->recordSize;
@@ -505,7 +510,7 @@ void ComputeAttrsOffset(Table table, int *attrOffset)
 
 value_t SearchUniqueAttr(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF)  // search whether the unique attribute value already exists in the table, if there exists an index, then use index to search, else do linear scan
 {
-    int i, j, blockNum, tmpRecordsNum, isLastBlockNotFull, indexNum = -1;
+    int i, j, blockNum, tmpRecordsNum, isLastBlockNotFull;
     off_t offset;
     value_t tupleOffset;
     struct tree_t tree;
@@ -515,21 +520,27 @@ value_t SearchUniqueAttr(Table table, IntFilter intF, FloatFilter floatF, StrFil
     my_key_t_float floatKey;
     my_key_t_str strKey;
     // first get the unique attribute we are going to search
-    if (intF)
+    int firstAttrWithIndex  = -1;
+    //int indexNum = -1;
+    if (intF && firstAttrWithIndex < 0 && table->attributes[intF->attrIndex].index >= 0)
     {
-        indexNum = table->attributes[intF->attrIndex].index;
+        //indexNum = table->attributes[intF->attrIndex].index;
+        firstAttrWithIndex = intF->attrIndex;
     }
-    else if (floatF)
+    else if (floatF && firstAttrWithIndex < 0 && table->attributes[floatF->attrIndex].index >= 0)
     {
-        indexNum = table->attributes[floatF->attrIndex].index;
+        //indexNum = table->attributes[floatF->attrIndex].index;
+        firstAttrWithIndex = floatF->attrIndex;
     }
-    else
+    else if (strF && firstAttrWithIndex && table->attributes[strF->attrIndex].index >= 0)
     {
-        indexNum = table->attributes[strF->attrIndex].index;
+        //indexNum = table->attributes[strF->attrIndex].index;
+        firstAttrWithIndex = strF->attrIndex;
     }
-    if (indexNum >= 0)
+    if (firstAttrWithIndex >= 0)
     {
-        GetTree(indexNum, &tree);
+        sprintf(tree.path, "%s_%s_index.db", table->name, table->attributes[table->primaryKey].name);
+        GetTree(&tree);
         // found the index file, then generate the key
         if (intF)  // int key
         {
@@ -1136,7 +1147,8 @@ void InsertTupleIndex(Table table, char *tuple, off_t offset)
     {
         if (table->attributes[i].index >= 0)  // if the attribute has an index
         {
-            GetTree(table->attributes[i].index, &tree);
+            sprintf(tree.path, "%s_%s_index.db", table->name, table->attributes[i].name);
+            GetTree(&tree);
             // generate filter and search the unique attribute value
             switch (table->attributes[i].type)
             {
@@ -1169,7 +1181,8 @@ void RemoveTupleIndex(Table table, char *tuple)
     {
         if (table->attributes[i].index >= 0)  // if the attribute has an index
         {
-            GetTree(table->attributes[i].index, &tree);
+            sprintf(tree.path, "%s_%s_index.db", table->name, table->attributes[i].name);
+            GetTree(&tree);
             // generate filter and search the unique attribute value
             switch (table->attributes[i].type)
             {
@@ -1190,10 +1203,10 @@ void RemoveTupleIndex(Table table, char *tuple)
     }
 }
 
-int GetTree(int indexNum, BPlusTree tree)
+int GetTree(BPlusTree tree)
 {
     meta_t *meta;
-    GetIndexFileName(indexNum, tree->path);
+    //GetIndexFileName(indexNum, tree->path);
     if ('\0' == tree->path[0])  // Oops, an invalid index file
     {
         printf("[ERROR] index file not found. You need to make sure that after drop a index, the meta data of a table should be updated.\n");
