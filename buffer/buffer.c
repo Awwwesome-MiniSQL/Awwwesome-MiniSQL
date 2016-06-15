@@ -1,19 +1,7 @@
-// #include "tool.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
-//#define BUFFER_SIZE (4 * 1024 * 1024)
-//#define BLOCK_SIZE (4096)
-
-// https://github.com/callMeName/MiniSql/tree/master/code
-// https://github.com/zmj1316/MiniSQL/blob/CPP/src
-
-// read and write
-// LRU
-// dirty
-// suoding ? 
 
 int log2(long num)
 {
@@ -89,10 +77,6 @@ void initMemory()
   if(PageBuffer == NULL) {printf("Memory allocation failed!\n"); return;} 
   Buffer = (byte *) malloc(sizeof(byte) * DATA_SIZE); 
   if(Buffer == NULL) {printf("Memory allocation failed!\n"); return;} 
-  // memset(page2v, sizeof(byte) * PAGE2_NUM, 0); 
-  // memset(page2t, sizeof(byte) * PAGE2_NUM, 0); 
-  // memset(PageBuffer, sizeof(byte) * BUFFER_PAGE_SIZE, 0); 
-  // memset(Buffer, sizeof(byte) * DATA_SIZE, 0); 
   for(i = 0; i < PAGE2_NUM; i++) 
     page2v[i] = 0; 
   return ; 
@@ -150,8 +134,6 @@ int LRU()
       P -> Next = P -> Next -> Next; 
       free(Temp); 
     }
-    /*else 
-      MemUse[P -> Next -> index]++; */
   }
   rTail = P; 
   rcnt = TOTAL_BASE / BLOCK_SIZE * TOTAL_NUM; 
@@ -173,12 +155,12 @@ word getMemoryAddr(word addr)
   word temp, p, t; 
   FILE *fp; 
   pag2 = addr >> (2 * BLOCK_BIT); 
-  v2 = page2v[pag2]; // (Memory[pag2 / 8] >> (7 - pag2 % 8)) & 0x1; // valid2 
+  v2 = page2v[pag2]; 
   if(v2 == 0) 
   {
     fp = fopen(MDISK, "rb+"); 
     if(fp == NULL) {printf("open file failed!\n"); return 0xFFFFFFFF;} 
-    p2 = 1; // rand() % (BUFFER_PAGE_SIZE / BLOCK_SIZE); // 1; // LRU(2); 
+    p2 =  rand() % (BUFFER_PAGE_SIZE / BLOCK_SIZE); 
     for(i = 0; i < PAGE2_NUM; i++) 
       if(page2v[i] != 0 && page2t[i] == p2) 
         break; 
@@ -190,15 +172,12 @@ word getMemoryAddr(word addr)
     }
     fseek(fp, pag2 * BLOCK_SIZE, SEEK_SET); 
     fread(&PageBuffer[p2 * BLOCK_SIZE], sizeof(byte), BLOCK_SIZE, fp); 
-     //printf("Page: %d\n", PageBuffer[BLOCK_SIZE + 3]); 
     page2v[pag2] = 1; 
     page2t[pag2] = p2; 
     fclose(fp); 
   }
-  temp = page2t[pag2] * BLOCK_SIZE; // Memory[PAGE2_v_SIZE + pag2] + PAGE2_v_SIZE + PAGE2_t_SIZE; 
-   //pag1 = (Memory[temp] << 24) | (Memory[temp + 1] << 16) | (Memory[temp + 2] << 8) | Memory[temp + 3]; // big-endian
+  temp = page2t[pag2] * BLOCK_SIZE; 
   pag1 = PageBuffer[temp] << 24 | PageBuffer[temp + 1] << 16 | PageBuffer[temp + 2] << 8 | PageBuffer[temp + 3]; 
-   //printf("%d\n", pag1); 
   v1 = pag1 >> 31; 
   d1 = (pag1 >> 30) & 0x1; 
   tag1 = (pag1 >> 10) & 0xFFFFF; 
@@ -223,10 +202,8 @@ word getMemoryAddr(word addr)
         }
         PageBuffer[i] &= 0x7F; 
       }
-     //printf("%020lx\n", tag1); 
     fseek(fp, tag1 * BLOCK_SIZE, SEEK_SET); 
     fread(&Buffer[p1 * BLOCK_SIZE], sizeof(byte), BLOCK_SIZE, fp); 
-    // printf("Buff: %d\n", Buffer[BLOCK_SIZE+1]); 
     pag1 = ((pag1 >> 10) << 10) | p1; 
     pag1 |= 0x80000000; 
     PageBuffer[temp] = (pag1 >> 24) & 0xFF; 
@@ -235,7 +212,6 @@ word getMemoryAddr(word addr)
     PageBuffer[temp+3] = pag1 & 0xFF; 
     fclose(fp); 
   }
-  // temp = pag1 & 0x3F + PAGE2_v_SIZE + PAGE2_t_SIZE; 
   useMemory(tag1); 
   return (pag1 & 0x3FF) * BLOCK_SIZE; 
 }
@@ -260,7 +236,6 @@ void sb(word addr, byte data)
 half lh(word addr)
 {
   return (lb(addr) << 8) | (lb(addr + 1)); 
-  // return (Buffer[getMemoryAddr(addr) + addr & 0xFFF] << 8) | Buffer[getMemoryAddr(addr + 1) + (addr+1) & 0xFFF]; 
 }
 
 void sh(word addr, half data)
@@ -273,7 +248,6 @@ void sh(word addr, half data)
 word lw(word addr)
 {
   return (lb(addr) << 24) | (lb(addr + 1) << 16) | (lb(addr + 2) << 8) | (lb(addr + 3)); 
-  // return (Buffer[getMemoryAddr(addr)] << 24) | (Buffer[getMemoryAddr(addr + 1)] << 16) | (Buffer[getMemoryAddr(addr + 2)] << 8) | Buffer[getMemoryAddr(addr + 3)]; 
 }
 
 void sw(word addr, word data)
@@ -287,10 +261,6 @@ void sw(word addr, word data)
 
 int main()
 {
-  //int temp; 
-  //temp = BUFFER_SIZE; 
-  //printf("%d\n", temp); 
-  //printf("%d\n", 1024 / 8 + 1024 + 5 * 1024 * 1024); 
   word addr = 0x00000003; 
   initMemory(); 
   printf("?\n"); 
