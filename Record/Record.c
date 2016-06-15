@@ -34,8 +34,7 @@ int CreateTable(Table table)
         table->recordSize += table->attributes[i].size;
     }
     table->recordsPerBlock = BLOCK_SIZE / table->recordSize;
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
+    sprintf(fileName, "%s_record.db", table->name);
     fp = fopen(fileName, "wb");
     fclose(fp);
     WriteBlock(fileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
@@ -43,10 +42,7 @@ int CreateTable(Table table)
     struct tree_t tree;
     if (table->primaryKey >= 0)
     {
-        strcpy(fileName, table->name);
-        strcat(fileName, "_");
-        strcat(fileName, table->attributes[table->primaryKey].name);
-        strcat(fileName, "_index.db");
+        sprintf(fileName, "%s_%s_index.db", table->name, table->attributes[table->primaryKey].name);
         fp = fopen(fileName, "wb");
         fclose(fp);
         // @TODO ask Catalog to add the index
