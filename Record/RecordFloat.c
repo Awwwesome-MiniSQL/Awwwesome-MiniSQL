@@ -12,8 +12,7 @@ int TraverseSearch_float(Table table, int *projection, BPlusTree tree, my_key_t_
     off_t leafOffset, parent, recordsOffset;
     value_t tupleOffset;
     char fileName[MAX_STRING_LENGTH];
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
+    sprintf(fileName, "%s_record.db", table->name);
     // first, find the key in leaf node
     parent = SearchIndex_float(tree, key);
     leafOffset = SearchLeaf_float(tree, parent, key);

@@ -54,8 +54,7 @@ int CreateTable(Table table)
 int RemoveTable(Table table)
 {
     char fileName[MAX_STRING_LENGTH];
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
+    sprintf(fileName, "%s_record.db", table->name);
     remove(fileName);
     //@TODO we need Catalog manager to help us remove meta data
     return 0;
@@ -359,8 +358,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
 
     char *tmpTuple, *lastTuple, *curBlock, *lastBlock;
     char fileName[MAX_STRING_LENGTH];
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
+    sprintf(fileName, "%s_record.db", table->name);
     // compute number of blocks in table
     isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
     blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
@@ -562,8 +560,7 @@ value_t SearchUniqueAttr(Table table, IntFilter intF, FloatFilter floatF, StrFil
     else  // we have to do linear scan
     {
         // first get file name of the table
-        strcpy(fileName, table->name);
-        strcat(fileName, "_record.db");
+        sprintf(fileName, "%s_record.db", table->name);
         // compute number of blocks in table
         isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
         blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
@@ -613,8 +610,7 @@ int LinearScan(Table table, int *projection, IntFilter intF, FloatFilter floatF,
     off_t offset;
     char *tmpTuple, *curBlock;
     char fileName[MAX_STRING_LENGTH];
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
+    sprintf(fileName, "%s_record.db", table->name);
     // compute number of blocks in table
     isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
     blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
