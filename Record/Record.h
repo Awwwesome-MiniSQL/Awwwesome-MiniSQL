@@ -62,20 +62,25 @@ void PrintDashes(Table table, int *projection, int *attrMaxLen);
 void ComputeAttrsOffset(Table table, int *attrOffset);
 //@brief search whether the unique attribute value already exists in the table
 value_t SearchUniqueAttr(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);
-int TraverseSearch_int(Table table, int *projection, BPlusTree tree, my_key_t_int key, enum CmpCond cond, int *attrMaxLen, IntFilter intF, FloatFilter floatF, StrFilter strF);
-int TraverseSearch_float(Table table, int *projection, BPlusTree tree, my_key_t_float key, enum CmpCond cond, int *attrMaxLen, IntFilter intF, FloatFilter floatF, StrFilter strF);
-int TraverseSearch_str(Table table, int *projection, BPlusTree tree, my_key_t_str key, enum CmpCond cond, int *attrMaxLen, IntFilter intF, FloatFilter floatF, StrFilter strF);
 void ComputeAttrsMaxLen(Table table, int *projection, int *attrMaxLen);
 int LinearScan(Table table, int *projection, IntFilter intF, FloatFilter floatF, StrFilter strF, int *attrMaxLen);
-int Move2NextChild_int(BPlusTree tree, leaf_t_int *leaf, int i);
-int Move2PreviousChild_int(BPlusTree tree, leaf_t_int *leaf, int i);
-int Move2NextChild_float(BPlusTree tree, leaf_t_float *leaf, int i);
-int Move2PreviousChild_float(BPlusTree tree, leaf_t_float *leaf, int i);
-int Move2NextChild_str(BPlusTree tree, leaf_t_str *leaf, int i);
-int Move2PreviousChild_str(BPlusTree tree, leaf_t_str *leaf, int i);
 void InsertTupleIndex(Table table, char *tuple, off_t offset);
 void RemoveTupleIndex(Table table, char *tuple);
 int GetTree(int indexNum, BPlusTree tree);
 void UpdateTupleIndex(Table table, char *tuple, off_t newOffset);
-off_t GetTuple(char *fileName, off_t tupleOffset, char **tuple, off_t recordsOffset, char *curBlock);
+off_t GetTuple(char *fileName, off_t tupleOffset, char **tuple, off_t recordsOffset, char **curBlock);
+
+
+int TraverseSearch_int(Table table, int *projection, BPlusTree tree, my_key_t_int key, enum CmpCond cond, int *attrMaxLen, IntFilter intF, FloatFilter floatF, StrFilter strF);
+int Move2NextChild_int(BPlusTree tree, leaf_t_int **leaf, int i);
+int Move2PreviousChild_int(BPlusTree tree, leaf_t_int **leaf, int i);
+
+int TraverseSearch_float(Table table, int *projection, BPlusTree tree, my_key_t_float key, enum CmpCond cond, int *attrMaxLen, IntFilter intF, FloatFilter floatF, StrFilter strF);
+int Move2NextChild_float(BPlusTree tree, leaf_t_float **leaf, int i);
+int Move2PreviousChild_float(BPlusTree tree, leaf_t_float **leaf, int i);
+
+int TraverseSearch_str(Table table, int *projection, BPlusTree tree, my_key_t_str key, enum CmpCond cond, int *attrMaxLen, IntFilter intF, FloatFilter floatF, StrFilter strF);
+int Move2NextChild_str(BPlusTree tree, leaf_t_str **leaf, int i);
+int Move2PreviousChild_str(BPlusTree tree, leaf_t_str **leaf, int i);
+
 #endif
