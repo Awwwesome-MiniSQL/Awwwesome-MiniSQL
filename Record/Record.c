@@ -710,7 +710,7 @@ int GetTree(BPlusTree tree)
     //GetIndexFileName(indexNum, tree->path);
     if ('\0' == tree->path[0])  // Oops, an invalid index file
     {
-        printf("[ERROR] index file not found. You need to make sure that after drop a index, the meta data of a table should be updated.\n");
+        printf("[ERROR] index file not found. You need to make sure that after drop an index, the meta data of a table should be updated.\n");
         return 1;
     }
     // read the meta data of tree first

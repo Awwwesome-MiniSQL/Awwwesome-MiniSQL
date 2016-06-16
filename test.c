@@ -144,6 +144,7 @@ struct AttributeRecord GetAttribute(Table table,char* name,int* attrIndex){//nam
     *attrIndex=i;
     return table->attributes[i];
 }
+/*
 int CreateTable(Table x){
     int i; struct AttributeRecord a;
     print("Function: CreateTable\n");
@@ -213,6 +214,7 @@ int DeleteTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrF
     }
     return 0;
 }
+*/
 //Interpreter Function, i_...
 void ErrorSyntax(const char* s){
     TRUEFLAG=F;
