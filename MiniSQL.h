@@ -14,7 +14,7 @@ struct AttributeRecord
     enum DataType type;
     int size;  // the size of the attribute, @NOTE '\0' should be counted
     char unique;  // unique == 1 (the attribute is unique) or 0 (not unique)
-    int index;  // index name
+    int index;  // index >= 0: there is an index, index < 0: no index
 };
 
 typedef struct TableRecord *Table;
