@@ -67,7 +67,7 @@ int main()
     */
 
     printf("Insert tuples one by one ...\n");
-    for (i = 0; i < 10; i++)
+    for (i = 0; i < 10000; i++)
     {
         *(int *)tuple = i;
         strcpy(tuple + 4, "ABC");

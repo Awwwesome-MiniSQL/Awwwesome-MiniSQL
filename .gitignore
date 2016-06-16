@@ -1,5 +1,6 @@
 *.h.gch
 *.o
 *.txt
+*.db
 interpreter
 test
