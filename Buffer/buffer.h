@@ -1,6 +1,8 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
+#include "catalog.h" 
+
 int log2(long num); 
 int log2c(long num); 
 
@@ -46,7 +48,23 @@ extern byte *page2t;
 extern byte *PageBuffer; 
 extern byte *Buffer; 
 
+// first used in the run 
 void initMemory(); 
+
+// should be used at the end of the 
+void freeMemory(); 
+
+// give the name of the table and the block number, return the address of data in the buffer 
+word ReadBlock(char *name, word num); 
+
+// give the name of the table, the block number and the write block, write the block 
+int WriteBlock(char *name, word num, byte *block); 
+
+
+
+void freeMemory(); 
+void initMemory(); 
+void createDataBase(void); 
 void freeMemory(); 
 int LRU(); 
 word getMemoryAddr(word addr); 
@@ -56,6 +74,6 @@ half lh(word addr);
 void sh(word addr, half data); 
 word lw(word addr); 
 void sw(word addr, word data); 
-
+word getFat(char *name, word num); 
 
 #endif

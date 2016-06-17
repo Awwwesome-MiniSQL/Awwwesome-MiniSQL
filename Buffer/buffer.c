@@ -1,7 +1,12 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include "buffer.h" 
+
+TRecord *rHead, *rTail; 
+int MemUse[TOTAL_BASE / BLOCK_SIZE * TOTAL_NUM]; 
+
+byte *page2v; 
+byte *page2t; 
+byte *PageBuffer; 
+byte *Buffer; 
 
 int log2(long num)
 {
@@ -19,51 +24,27 @@ int log2c(long num)
   return temp; 
 }
 
-#define TOTAL_BASE (1024 * 1024 * 1024)
-#define TOTAL_NUM (4)
-#define BLOCK_SIZE (4 * 1024)     // 4 KB per page 
-#define BLOCK_BIT (log2c(BLOCK_SIZE)) 
-#define TOTAL_BLOCK_NUM (TOTAL_BASE / BLOCK_SIZE * TOTAL_NUM)
-#define TAG_BIT (log2c(TOTAL_BLOCK_NUM))
-#define DATA_SIZE (4 * 1024 * 1024)           // 4 MB for buffer_data
-#define DATA_NUM (DATA_SIZE / BLOCK_SIZE)
-#define DATA_BIT (log2c(DATA_NUM)) 
-#define PAGE_BIT (1 + 1 + TAG_BIT + DATA_BIT)
-#define PAGE_SIZE (PAGE_BIT * TOTAL_BLOCK_NUM / 8) 
-#define BUFFER_PAGE_SIZE (1 * 1024 * 1024)    // 1 MB for buffer_page
-
-#define PAGE2_NUM (PAGE_SIZE / BLOCK_SIZE) 
-// (v)   (page2_t)     (page_t)       (data) 
-//  1  page2  8
-//   Memory[ + 3] | +2 | +1 | 0 
-#define DISK ("disk.db") 
-#define MDISK ("mdisk.db") 
-
-#define MAXINT (18) 
-
-typedef unsigned char byte; 
-typedef unsigned short half; 
-typedef unsigned long word; 
-
-struct TimeRecord
+void createDataBase(void) 
 {
-  word index; 
-  word time; 
-  struct TimeRecord *Next; 
-};
-typedef struct TimeRecord TRecord; 
-
-TRecord *rHead, *rTail; 
-int MemUse[TOTAL_BASE / BLOCK_SIZE * TOTAL_NUM]; // 
-
-byte *page2v; 
-byte *page2t; 
-byte *PageBuffer; 
-byte *Buffer; 
+  FILE *fp; 
+  byte zero = 0; 
+  fp = fopen(MDISK, "wb"); 
+  if(fp == NULL) return 0; 
+  fwrite(&zero, sizeof(zero), PAGE_SIZE, fp); 
+  fclose(fp); 
+  fp = fopen(DISK, "wb"); 
+  if(fp == NULL) return 0; 
+  fwrite(&zero, sizeof(zero), TOTAL_NUM * TOTAL_BASE, fp); 
+  fclose(fp); 
+  return 0; 
+}
 
 void initMemory()
 {
   int i; 
+
+  if(createDataBase() == 0) exit(0); 
+
   rHead = (TRecord *)malloc(sizeof(struct TimeRecord)); 
   if(rHead == NULL) {printf("Memory allocation failed!\n"); return;} 
   rHead -> Next = NULL; 
@@ -88,6 +69,7 @@ void initMemory()
   return ; 
   for(i = 0; i < DATA_SIZE; i++) 
     Buffer[i] = 0; 
+
   return ; 
 }
 
@@ -137,7 +119,7 @@ int LRU()
   }
   rTail = P; 
   rcnt = TOTAL_BASE / BLOCK_SIZE * TOTAL_NUM; 
-  for(i = 0; i < rcnt; i++) // 
+  for(i = 0; i < rcnt; i++) 
   {
     if(MemUse[i] < Min)
     {
@@ -259,16 +241,44 @@ void sw(word addr, word data)
   return ; 
 }
 
-int main()
+word getFat(char *name, word num)
 {
-  word addr = 0x00000003; 
-  initMemory(); 
-  printf("?\n"); 
-  printf("%d\n", Buffer[getMemoryAddr(addr) + addr & 0xFFF]); 
-  printf("%lx %lx %lx\n", lb(addr), lh(addr), lw(addr)); 
-  sh(addr, 0x1131); 
-  printf("%lx %lx %lx\n", lb(addr), lh(addr), lw(addr)); 
-  freeMemory(); 
+  FTree T; 
+  word fatAddr, nextAddr, i; 
+  T = findFile(name, THead); 
+  if(T == NULL) return 0x00000000; 
+  fatAddr = T -> Addr; 
+  nextAddr = lh(fatAddr * 2); 
+  i = 0; 
+  while(nextAddr != 0xFFFF && i < num)
+  {
+    fatAddr = nextAddr; 
+    nextAddr = lh(fatAddr * 2); 
+    i++; 
+  }
+  return fatAddr; 
+}
 
-  return 0; 
+word ReadBlock(char *name, word num)
+{
+  word fatAddr; 
+  fatAddr = getFat(name, num); 
+  if(fatAddr == 0x0000) return 0xFFFFFFFF; 
+  return getMemoryAddr(TRUEADDR(fatAddr)); 
+}
+
+int WriteBlock(char *name, word num, byte *block)
+{
+  word bufferAddr, addr, fatAddr, pag2; 
+  FTree T; 
+  word i; 
+  fatAddr = getFat(name, num); 
+  if(fatAddr == 0x0) return 0; 
+  bufferAddr = getMemoryAddr(TRUEADDR(fatAddr)); 
+  for(i = 0; i < BLOCK_SIZE; i++, bufferAddr++) 
+    Buffer[bufferAddr] = block[i]; 
+  addr = TRUEADDR(fatAddr); 
+  pag2 = addr >> (2 * BLOCK_BIT);  
+  PageBuffer[page2t[pag2]] |= 0x40; 
+  return 1; 
 }
