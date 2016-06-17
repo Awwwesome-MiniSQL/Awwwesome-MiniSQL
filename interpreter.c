@@ -240,6 +240,9 @@ struct AttributeRecord i_create_table_attribute(char* s){//s:"xh char(10) unique
     w(s,4);
     if(e(t[4],"integer")||e(t[4],"int")){
         x.type=intType;
+#ifdef DEBUG
+    printf("t[0]: %s\nt[1]: %s\nt[2]: %s\nt[3]: %s\nt[4]: \"%s\"\n", t[0], t[1], t[2], t[3], t[4]);
+#endif
         size=4;
     }else if(e(t[4],"float")){
         x.type=floatType;
@@ -248,9 +251,6 @@ struct AttributeRecord i_create_table_attribute(char* s){//s:"xh char(10) unique
         x.type=stringType;
         size+=1;
     }else {
-#ifdef DEBUG
-        printf("t[0]: %s\nt[1]: %s\nt[2]: %s\nt[3]: %s\nt[4]: \"%s\"\n", t[0], t[1], t[2], t[3], t[4]);
-#endif
         ErrorSyntax("int/float/char()");
         size=255;
     }
