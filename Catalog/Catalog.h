@@ -15,9 +15,6 @@ int RemoveTableFromCatalog(char *name);
 // when we create an index file, add it to the catalog
 int AddIndexToCatalog(char *name);
 
-//@brief given the index number, find the index file name and put it in argument 2
-void GetIndexFileName(int indexNum, char *indexFileName);
-
 //@brief remove the index from Catalog when we drop a table or delete index
 int RemoveIndexFromCatalog(int num);
 
