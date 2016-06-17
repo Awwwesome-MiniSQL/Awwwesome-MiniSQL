@@ -42,6 +42,10 @@ int main() {
     interpreter(sql6);
     puts("========================");
     //interpreter("select * from student");
+    sprintf(sql5, "select * from student");
+    printf("%s...\n", sql5);
+    interpreter(sql5);
+
     //Drop
     /*
     char sql7[]="drop table student";
