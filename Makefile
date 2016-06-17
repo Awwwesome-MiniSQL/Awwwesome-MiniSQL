@@ -28,7 +28,7 @@ Record.o: Record/Record.c Record/Record.h MiniSQL.h BPlusTree/BPlusTree.h
 Catalog.o: Catalog/Catalog.c Catalog/Catalog.h
 	$(CC) $(CFLAGS) $(DEBUG) Catalog/Catalog.c
 
-test.o: test.c MiniSQL.h BPlusTree/BPlusTree.h
+test.o: test.c MiniSQL.h BPlusTree/BPlusTree.h interpreter.c
 	$(CC) $(CFLAGS) $(DEBUG) test.c
 
 clean:
