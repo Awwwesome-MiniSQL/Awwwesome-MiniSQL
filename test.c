@@ -9,7 +9,7 @@
 #include "BPlusTree/BPlusTreeStr.h"
 #include "Catalog/Catalog.h"
 #include "interpreter.c"
-
+#define DEBUG
 int main() {
     //TEST:
     //Not Implemented:Create Drop Index
@@ -23,6 +23,7 @@ int main() {
 
     //Create Table
     char sql3[]="create table student (xh char(10) unique primary key,id int,name char(20),major char(30),GPA float);";
+    puts(sql3);
     interpreter(sql3);//this is preparing for call insert and select
     puts("========================");
 

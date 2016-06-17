@@ -41,6 +41,8 @@ char* w(char* s,int id) { //w:getword, s:"create table classroom...", id:buffer 
     puts(test);            //b   c
 */
 char* i_get_dh(char* s,int id){//s:"a,b,c",id:buffer id, return=t[id]:"a",s:"b,c"
+char temp[9999];
+printf("  [Before dh]%s#id:%d\n",s,id);
     if (!in(",",s)) {
         strcpy(t[id],s);
         s[0]=0;
@@ -50,8 +52,10 @@ char* i_get_dh(char* s,int id){//s:"a,b,c",id:buffer id, return=t[id]:"a",s:"b,c
             if(s[i]==',') break;
             *p++=s[i];
         }*p=0;
-        strcpy(s,s+i+1);
+        strcpy(temp,s+i+1);
+        strcpy(s,temp);
     }
+    printf("  [After dh]%s#%s#id:%d\n",s,t[id],id);
     return t[id];
 }/*TEST:
     char test[]="a,bbb,c";
@@ -234,6 +238,7 @@ void ErrorSyntax(const char* s){
 }
 
 struct AttributeRecord i_create_table_attribute(char* s){//s:"xh char(10) unique"
+puts(s);
     struct AttributeRecord x;int size;
     w(s,6);
     strcpy(x.name,t[6]);
@@ -272,11 +277,13 @@ int i_create_table(char* table_name,char* s){//table_name:"student", s:"xh char(
     for(i=0;i<MAX_ATTRIBUTE_NUM;i++) ta.attributes[i].name[0]=0;
     i=0;
     while(!e(s,"")){
+        printf("[Before i_get_dh]%s\n",s);
         i_get_dh(s,5);//s.split(',')
-        if(!in("primary key",t[5])) {ta.attributes[i++]=i_create_table_attribute(t[5]);safe2();}//normal one
+        if(!in("primary key",t[5])) {printf("Debuging:%s\n",t[5]);ta.attributes[i++]=i_create_table_attribute(t[5]);safe2();}//normal one
         else {
             trim(t[5]);
             if(strstr(t[5],"primary key")==t[5]){//"primary key (xh)"
+                //printf("[DEBUG]In primary key:%s",t[5]);
                 char key_name[MAX_NAME_LENGTH]={0};
                 if(in("(",t[5])) sscanf(trim(t[5]+strlen("primary key")),"(%[^)])",key_name);
                 else strcpy(key_name,trim(t[4]+strlen("primary key")));
@@ -292,6 +299,7 @@ int i_create_table(char* table_name,char* s){//table_name:"student", s:"xh char(
                     return F;
                 }
             }else{
+                printf("DEBUG:");puts(t[5]);
                 ta.attributes[i++]=i_create_table_attribute(t[5]);safe2();
                 ta.primaryKey=i-1;
             }
