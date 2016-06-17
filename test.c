@@ -13,6 +13,7 @@
 int main() {
     //TEST:
     //Not Implemented:Create Drop Index
+    /*
     char sql1[]="create index name_index on student (name)";
     interpreter(sql1);
     puts("========================");
@@ -20,7 +21,7 @@ int main() {
     char sql2[]="drop index name_index on student";
     interpreter(sql2);
     puts("========================");
-
+    */
     //Create Table
     char sql3[]="create table student (xh char(10) unique primary key,id int,name char(20),major char(30),GPA float);";
     interpreter(sql3);//this is preparing for call insert and select

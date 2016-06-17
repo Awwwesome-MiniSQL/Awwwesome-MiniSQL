@@ -144,7 +144,7 @@ struct TableRecord GetTable(char* table_name)
      memcpy(&t,table,sizeof(struct TableRecord));
      free(table);
      return t;
- }   
+ }
     /*
 struct TableRecord __DEBUG__table;//this is for my module test, delete it when catalog finished
 struct TableRecord GetTable(char* table_name){//this is for my module test, delete it when catalog finished
@@ -569,9 +569,12 @@ int interpreter(char* s){
     else {ErrorSyntax("create/drop/select/insert/delete");goto False;}
     return 0;
 False:
+#ifdef DEBUG
+    printf("t[0]: \"%s\"\n", t[0]);
+    printf("result: %d\n", e(t[0], "create"));
+#endif
     print_error();
     error_message[0]=0;
     TRUEFLAG=1;
     return F;
 }
-
