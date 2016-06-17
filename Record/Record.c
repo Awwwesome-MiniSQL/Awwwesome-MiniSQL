@@ -11,10 +11,19 @@
 
 int CreateTable(Table table)
 {
+    int i; 
+    struct AttributeRecord a;
+    printf("Function: CreateTable\n");
+    printf("TABLE:\n name:%s\n attrNum:%d\n primaryKey:%d\n recordSize:%d\n recordNum:%d\n recordsPerBlock:%d\n",table->name,table->attrNum,table->primaryKey,table->recordSize,table->recordNum,table->recordsPerBlock);
+    for(i=0;i<table->attrNum;i++)
+    {
+        a=table->attributes[i];
+        //printf(" Name:%s\n Type:%d\n Size:%d\n Unique:%d\n Index:%d\n",a.name,a.type,a.size,(int)a.unique,a.index);
+    }
     //@TODO we need Catalog manager here to check whether the table exists
     FILE *fp;
     char fileName[MAX_STRING_LENGTH];
-    int i;
+    //int i;
     //char metaFileName[] = TABLE_META_DATA_FILENAME;
     // append the meta data to the meta data file
     //fp = fopen(metaFileName, "ab+");
@@ -37,6 +46,7 @@ int CreateTable(Table table)
     sprintf(fileName, "%s_record.db", table->name);
     fp = fopen(fileName, "wb");
     fclose(fp);
+    puts(fileName);
     WriteBlock(fileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
     // initialize a BPlusTree
     struct tree_t tree;
@@ -432,6 +442,10 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
 #endif
             }
             table->recordNum--;
+            if (0 == table->recordNum)
+            {
+                break;
+            }
             isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
             blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
             tmpRecordsNum = (j == blockNum - 1 && isLastBlockNotFull) ? isLastBlockNotFull : table->recordsPerBlock;  // number of records in current block
@@ -441,6 +455,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
 #endif
     }
     printf("Query OK, %d row(s) affected.\n\n", count);
+    WriteBlock(fileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
     return count;
 }
 
@@ -613,6 +628,10 @@ int LinearScan(Table table, int *projection, IntFilter intF, FloatFilter floatF,
     sprintf(fileName, "%s_record.db", table->name);
     // compute number of blocks in table
     isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
+    if (0 == table->recordNum)
+    {
+        return count;
+    }
     blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
     for (j = 1; j <= blockNum; j++)  // for each block
     {
