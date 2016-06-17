@@ -1,7 +1,7 @@
 #include <string.h>
 #include "BPlusTree.h"
 #include "../MiniSQL.h"
-// ======================= buffer read and write =======================
+// ======================= buffer read and write ===============================
 // ReadBlock and WriteBlock functions are provided by Buffer module
 #ifdef NOBUFFER
 void *ReadBlock(char *fileName, off_t offset, size_t size)
@@ -33,6 +33,7 @@ int WriteBlock(char *fileName, void *block, off_t offset, size_t size)
     return ret;
 }
 #endif
+// =============================================================================
 
 int IntKeyCmp(int A, int B)
 {

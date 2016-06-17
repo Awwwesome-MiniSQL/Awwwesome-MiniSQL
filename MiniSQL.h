@@ -4,6 +4,7 @@
 #define BLOCK_SIZE 4096 // 4 KB a block
 #define MAX_NAME_LENGTH 64
 #define MAX_STRING_LENGTH 256
+#define NOBUFFER
 #define DEBUG
 // three types of data, int, float, and string (the size of a string is between 0 and 255)
 enum DataType{intType, floatType, stringType};
@@ -13,7 +14,7 @@ struct AttributeRecord
     enum DataType type;
     int size;  // the size of the attribute, @NOTE '\0' should be counted
     char unique;  // unique == 1 (the attribute is unique) or 0 (not unique)
-    int index;  // index name
+    int index;  // index >= 0: there is an index, index < 0: no index
 };
 
 typedef struct TableRecord *Table;

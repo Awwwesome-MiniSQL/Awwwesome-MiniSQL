@@ -41,8 +41,7 @@ int CreateTable(Table table)
         table->recordSize += table->attributes[i].size;
     }
     table->recordsPerBlock = BLOCK_SIZE / table->recordSize;
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
+    sprintf(fileName, "%s_record.db", table->name);
     fp = fopen(fileName, "wb");
     fclose(fp);
     puts(fileName);
@@ -51,10 +50,7 @@ int CreateTable(Table table)
     struct tree_t tree;
     if (table->primaryKey >= 0)
     {
-        strcpy(fileName, table->name);
-        strcat(fileName, "_");
-        strcat(fileName, table->attributes[table->primaryKey].name);
-        strcat(fileName, "_index.db");
+        sprintf(fileName, "%s_%s_index.db", table->name, table->attributes[table->primaryKey].name);
         fp = fopen(fileName, "wb");
         fclose(fp);
         // @TODO ask Catalog to add the index
@@ -66,8 +62,7 @@ int CreateTable(Table table)
 int RemoveTable(Table table)
 {
     char fileName[MAX_STRING_LENGTH];
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
+    sprintf(fileName, "%s_record.db", table->name);
     remove(fileName);
     //@TODO we need Catalog manager to help us remove meta data
     return 0;
@@ -75,7 +70,7 @@ int RemoveTable(Table table)
 
 int SearchTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF, int *projection)  // do linear scan
 {
-    int i, count, indexNum = -1;
+    int i, count;
     int attrMaxLen[MAX_ATTRIBUTE_NUM], fullProjection[MAX_ATTRIBUTE_NUM];
     IntFilter curIF = intF;
     FloatFilter curFF = floatF;
@@ -99,46 +94,52 @@ int SearchTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
     ComputeAttrsMaxLen(table, projection, attrMaxLen);
     PrintTableHeader(table, projection, attrMaxLen);
     // find the first index we can use to search
-    while (curIF)
+    int firstAttrWithIndex = -1;
+    //int indexNum = -1;
+    while (curIF && firstAttrWithIndex < 0)
     {
         if (table->attributes[curIF->attrIndex].index >= 0)
         {
             curFF = NULL;
             curSF = NULL;
-            indexNum = table->attributes[curIF->attrIndex].index;
+            //indexNum = table->attributes[curIF->attrIndex].index;
+            firstAttrWithIndex = curIF->attrIndex;
             cond = curIF->cond;
             break;
         }
         curIF = curIF->next;
     }
-    while (curFF)
+    while (curFF && firstAttrWithIndex < 0)
     {
         if (table->attributes[curFF->attrIndex].index >= 0)
         {
             curIF = NULL;
             curSF = NULL;
-            indexNum = table->attributes[curFF->attrIndex].index;
+            //indexNum = table->attributes[curFF->attrIndex].index;
+            firstAttrWithIndex = curFF->attrIndex;
             cond = curFF->cond;
             break;
         }
         curFF = curFF->next;
     }
-    while (curSF)
+    while (curSF && firstAttrWithIndex < 0)
     {
         if (table->attributes[curSF->attrIndex].index >= 0)
         {
             curIF = NULL;
             curFF = NULL;
-            indexNum = table->attributes[curSF->attrIndex].index;
+            //indexNum = table->attributes[curSF->attrIndex].index;
+            firstAttrWithIndex = curSF->attrIndex;
             cond = curSF->cond;
             break;
         }
         curSF = curSF->next;
     }
     // search with index or linear scan
-    if (indexNum >= 0 && NOTEQUAL != cond && (intF || floatF || strF))  // use index
+    if (firstAttrWithIndex >= 0 && NOTEQUAL != cond && (intF || floatF || strF))  // use index
     {
-        GetTree(indexNum, &tree);
+        sprintf(tree.path, "%s_%s_index.db", table->name, table->attributes[firstAttrWithIndex].name);
+        GetTree(&tree);
         // found the index file, then generate the key
         if (curIF)  // int key
         {
@@ -170,8 +171,7 @@ off_t InsertTuple(Table table, char *tuple)
     off_t offset, insertPos;
     char *node;
     char fileName[MAX_STRING_LENGTH];
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
+    sprintf(fileName, "%s_record.db", table->name);
     // compute the offset of the block of record to insert
     offset = TABLE_RECORD_OFFSET + table->recordNum / table->recordsPerBlock * BLOCK_SIZE;
     insertPos = table->recordNum % table->recordsPerBlock * table->recordSize;
@@ -366,8 +366,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
 
     char *tmpTuple, *lastTuple, *curBlock, *lastBlock;
     char fileName[MAX_STRING_LENGTH];
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
+    sprintf(fileName, "%s_record.db", table->name);
     // compute number of blocks in table
     isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
     blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
@@ -521,7 +520,7 @@ void ComputeAttrsOffset(Table table, int *attrOffset)
 
 value_t SearchUniqueAttr(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF)  // search whether the unique attribute value already exists in the table, if there exists an index, then use index to search, else do linear scan
 {
-    int i, j, blockNum, tmpRecordsNum, isLastBlockNotFull, indexNum = -1;
+    int i, j, blockNum, tmpRecordsNum, isLastBlockNotFull;
     off_t offset;
     value_t tupleOffset;
     struct tree_t tree;
@@ -531,21 +530,27 @@ value_t SearchUniqueAttr(Table table, IntFilter intF, FloatFilter floatF, StrFil
     my_key_t_float floatKey;
     my_key_t_str strKey;
     // first get the unique attribute we are going to search
-    if (intF)
+    int firstAttrWithIndex  = -1;
+    //int indexNum = -1;
+    if (intF && firstAttrWithIndex < 0 && table->attributes[intF->attrIndex].index >= 0)
     {
-        indexNum = table->attributes[intF->attrIndex].index;
+        //indexNum = table->attributes[intF->attrIndex].index;
+        firstAttrWithIndex = intF->attrIndex;
     }
-    else if (floatF)
+    else if (floatF && firstAttrWithIndex < 0 && table->attributes[floatF->attrIndex].index >= 0)
     {
-        indexNum = table->attributes[floatF->attrIndex].index;
+        //indexNum = table->attributes[floatF->attrIndex].index;
+        firstAttrWithIndex = floatF->attrIndex;
     }
-    else
+    else if (strF && firstAttrWithIndex && table->attributes[strF->attrIndex].index >= 0)
     {
-        indexNum = table->attributes[strF->attrIndex].index;
+        //indexNum = table->attributes[strF->attrIndex].index;
+        firstAttrWithIndex = strF->attrIndex;
     }
-    if (indexNum >= 0)
+    if (firstAttrWithIndex >= 0)
     {
-        GetTree(indexNum, &tree);
+        sprintf(tree.path, "%s_%s_index.db", table->name, table->attributes[table->primaryKey].name);
+        GetTree(&tree);
         // found the index file, then generate the key
         if (intF)  // int key
         {
@@ -567,8 +572,7 @@ value_t SearchUniqueAttr(Table table, IntFilter intF, FloatFilter floatF, StrFil
     else  // we have to do linear scan
     {
         // first get file name of the table
-        strcpy(fileName, table->name);
-        strcat(fileName, "_record.db");
+        sprintf(fileName, "%s_record.db", table->name);
         // compute number of blocks in table
         isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
         blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
@@ -592,393 +596,6 @@ value_t SearchUniqueAttr(Table table, IntFilter intF, FloatFilter floatF, StrFil
         }
     }  // no index
     return 0;  // unique value not found
-}
-
-int TraverseSearch_int(Table table, int *projection, BPlusTree tree, my_key_t_int key, enum CmpCond cond, int *attrMaxLen, IntFilter intF, FloatFilter floatF, StrFilter strF)
-{
-    int i, compareRes, count = 0;
-    char *tuple, *curBlock;
-    leaf_t_int *leaf;
-    off_t leafOffset, parent, recordsOffset;
-    value_t tupleOffset;
-    char fileName[MAX_STRING_LENGTH];
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
-    // first, find the key in leaf node
-    parent = SearchIndex_int(tree, key);
-    leafOffset = SearchLeaf_int(tree, parent, key);
-    leaf = (leaf_t_int *)ReadBlock(tree->path, leafOffset, BLOCK_SIZE);
-    for (i = 0; i < (int)leaf->n; i++)
-    {
-        compareRes = KeyCmp_int(leaf->children[i].key, key);
-        if (compareRes >= 0)  // found its upper bound
-        {
-            break;
-        }
-    }
-    // exception handling, if not found here
-    if (i >= (int)leaf->n &&  (LARGERE == cond || LARGER == cond))  // look up the right block
-    {
-        if (0 == leaf->next)  // the end of the tree
-        {
-#ifdef NOBUFFER
-                free(leaf);
-#endif
-            return count;
-        }
-        leafOffset = leaf->next;
-        i = 0;
-#ifdef NOBUFFER
-        free(leaf);
-#endif
-        leaf = (leaf_t_int *)ReadBlock(tree->path, leafOffset, BLOCK_SIZE);
-    }
-    else if (0 == i && 0 != compareRes && (SMALLERE == cond || SMALLER == cond))  // look up the left block
-    {
-        if (0 == leaf->prev)
-        {
-#ifdef NOBUFFER
-            free(leaf);
-#endif
-            return count;
-        }
-        leafOffset = leaf->prev;
-        i = (int)leaf->n - 1;
-#ifdef NOBUFFER
-        free(leaf);
-#endif
-        leaf = (leaf_t_int *)ReadBlock(tree->path, leafOffset, BLOCK_SIZE);
-    }
-
-    tupleOffset = leaf->children[i].value;
-    recordsOffset = tupleOffset - tupleOffset % BLOCK_SIZE;
-    // read the block we found
-    curBlock = (char *)ReadBlock(fileName, recordsOffset, BLOCK_SIZE);
-    tuple = (char *)curBlock+ tupleOffset % BLOCK_SIZE;
-    // if the compare condition is "==", ">=" or "<=" we might have to print the tuple whose offset == tupleOffset
-    if ((EQUAL == cond || LARGERE == cond || SMALLERE == cond) && 0 != CheckTuple(tuple, table, intF, floatF, strF))
-    {
-        PrintTuple(table, tuple, projection, attrMaxLen);
-        count++;
-        if (LARGERE == cond)  // move to next children
-        {
-            i = Move2NextChild_int(tree, leaf, i);
-            tupleOffset = leaf->children[i].value;
-            recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, curBlock);
-        }
-        else if (SMALLERE == cond)  // move to previous children
-        {
-            i = Move2PreviousChild_int(tree, leaf, i);
-            tupleOffset = leaf->children[i].value;
-            recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, curBlock);
-        }
-        if (i < 0)  // no tuples to search any more
-        {
-#ifdef NOBUFFER
-            free(leaf);
-            free(curBlock);
-#endif
-            return count;
-        }
-    }
-    switch (cond)
-    {
-        case LARGERE:
-        case LARGER:  // treat LARGERE and LARGER as LARGER because EQUAL has been dealt with already
-            while(i >= 0)
-            {
-                if (0 != CheckTuple(tuple, table, intF, floatF, strF))
-                {
-                    PrintTuple(table, tuple, projection, attrMaxLen);
-                    count++;
-                }
-                i = Move2NextChild_int(tree, leaf, i);
-                tupleOffset = leaf->children[i].value;
-                recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, curBlock);
-            }
-            break;
-        case SMALLER:
-        case SMALLERE: // treat SMALLERE and SMALLER as LARGER because EQUAL has been dealt with already
-            while(i >= 0)
-            {
-                if (0 != CheckTuple(tuple, table, intF, floatF, strF))
-                {
-                    PrintTuple(table, tuple, projection, attrMaxLen);
-                    count++;
-                }
-                i = Move2PreviousChild_int(tree, leaf, i);
-                tupleOffset = leaf->children[i].value;
-                recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, curBlock);
-            }
-            break;
-        case NOTEQUAL:
-            LinearScan(table, projection, intF, floatF, strF, attrMaxLen);
-            break;
-        default: break;
-    }
-#ifdef NOBUFFER
-    free(leaf);
-    free(curBlock);
-#endif
-    return count;
-}
-
-int TraverseSearch_float(Table table, int *projection, BPlusTree tree, my_key_t_float key, enum CmpCond cond, int *attrMaxLen, IntFilter intF, FloatFilter floatF, StrFilter strF)
-{
-    int i, compareRes, count = 0;
-    char *tuple, *curBlock;
-    leaf_t_float *leaf;
-    off_t leafOffset, parent, recordsOffset;
-    value_t tupleOffset;
-    char fileName[MAX_STRING_LENGTH];
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
-    // first, find the key in leaf node
-    parent = SearchIndex_float(tree, key);
-    leafOffset = SearchLeaf_float(tree, parent, key);
-    leaf = (leaf_t_float *)ReadBlock(tree->path, leafOffset, BLOCK_SIZE);
-    for (i = 0; i < (int)leaf->n; i++)
-    {
-        compareRes = KeyCmp_float(leaf->children[i].key, key);
-        if (compareRes >= 0)  // found its upper bound
-        {
-            break;
-        }
-    }
-    // exception handling, if not found here
-    if (i >= (int)leaf->n &&  (LARGERE == cond || LARGER == cond))  // look up the right block
-    {
-        if (0 == leaf->next)  // the end of the tree
-        {
-#ifdef NOBUFFER
-                free(leaf);
-#endif
-            return count;
-        }
-        leafOffset = leaf->next;
-        i = 0;
-#ifdef NOBUFFER
-        free(leaf);
-#endif
-        leaf = (leaf_t_float *)ReadBlock(tree->path, leafOffset, BLOCK_SIZE);
-    }
-    else if (0 == i && 0 != compareRes && (SMALLERE == cond || SMALLER == cond))  // look up the left block
-    {
-        if (0 == leaf->prev)
-        {
-#ifdef NOBUFFER
-            free(leaf);
-#endif
-            return count;
-        }
-        leafOffset = leaf->prev;
-        i = (int)leaf->n - 1;
-#ifdef NOBUFFER
-        free(leaf);
-#endif
-        leaf = (leaf_t_float *)ReadBlock(tree->path, leafOffset, BLOCK_SIZE);
-    }
-
-    tupleOffset = leaf->children[i].value;
-    recordsOffset = tupleOffset - tupleOffset % BLOCK_SIZE;
-    // read the block we found
-    curBlock = (char *)ReadBlock(fileName, recordsOffset, BLOCK_SIZE);
-    tuple = (char *)curBlock+ tupleOffset % BLOCK_SIZE;
-    // if the compare condition is "==", ">=" or "<=" we might have to print the tuple whose offset == tupleOffset
-    if ((EQUAL == cond || LARGERE == cond || SMALLERE == cond) && 0 != CheckTuple(tuple, table, intF, floatF, strF))
-    {
-        PrintTuple(table, tuple, projection, attrMaxLen);
-        count++;
-        if (LARGERE == cond)  // move to next children
-        {
-            i = Move2NextChild_float(tree, leaf, i);
-            tupleOffset = leaf->children[i].value;
-            recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, curBlock);
-        }
-        else if (SMALLERE == cond)  // move to previous children
-        {
-            i = Move2PreviousChild_float(tree, leaf, i);
-            tupleOffset = leaf->children[i].value;
-            recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, curBlock);
-        }
-        if (i < 0)  // no tuples to search any more
-        {
-#ifdef NOBUFFER
-            free(leaf);
-            free(curBlock);
-#endif
-            return count;
-        }
-    }
-    switch (cond)
-    {
-        case LARGERE:
-        case LARGER:  // treat LARGERE and LARGER as LARGER because EQUAL has been dealt with already
-            while(i >= 0)
-            {
-                if (0 != CheckTuple(tuple, table, intF, floatF, strF))
-                {
-                    PrintTuple(table, tuple, projection, attrMaxLen);
-                    count++;
-                }
-                i = Move2NextChild_float(tree, leaf, i);
-                tupleOffset = leaf->children[i].value;
-                recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, curBlock);
-            }
-            break;
-        case SMALLER:
-        case SMALLERE: // treat SMALLERE and SMALLER as LARGER because EQUAL has been dealt with already
-            while(i >= 0)
-            {
-                if (0 != CheckTuple(tuple, table, intF, floatF, strF))
-                {
-                    PrintTuple(table, tuple, projection, attrMaxLen);
-                    count++;
-                }
-                i = Move2PreviousChild_float(tree, leaf, i);
-                tupleOffset = leaf->children[i].value;
-                recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, curBlock);
-            }
-            break;
-        case NOTEQUAL:
-            LinearScan(table, projection, intF, floatF, strF, attrMaxLen);
-            break;
-        default: break;
-    }
-#ifdef NOBUFFER
-    free(leaf);
-    free(curBlock);
-#endif
-    return count;
-}
-
-int TraverseSearch_str(Table table, int *projection, BPlusTree tree, my_key_t_str key, enum CmpCond cond, int *attrMaxLen, IntFilter intF, FloatFilter floatF, StrFilter strF)
-{
-    int i, compareRes, count = 0;
-    char *tuple, *curBlock;
-    leaf_t_str *leaf;
-    off_t leafOffset, parent, recordsOffset;
-    value_t tupleOffset;
-    char fileName[MAX_STRING_LENGTH];
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
-    // first, find the key in leaf node
-    parent = SearchIndex_str(tree, key);
-    leafOffset = SearchLeaf_str(tree, parent, key);
-    leaf = (leaf_t_str *)ReadBlock(tree->path, leafOffset, BLOCK_SIZE);
-    for (i = 0; i < (int)leaf->n; i++)
-    {
-        compareRes = KeyCmp_str(leaf->children[i].key, key);
-        if (compareRes >= 0)  // found its upper bound
-        {
-            break;
-        }
-    }
-    // exception handling, if not found here
-    if (i >= (int)leaf->n &&  (LARGERE == cond || LARGER == cond))  // look up the right block
-    {
-        if (0 == leaf->next)  // the end of the tree
-        {
-#ifdef NOBUFFER
-                free(leaf);
-#endif
-            return count;
-        }
-        leafOffset = leaf->next;
-        i = 0;
-#ifdef NOBUFFER
-        free(leaf);
-#endif
-        leaf = (leaf_t_str *)ReadBlock(tree->path, leafOffset, BLOCK_SIZE);
-    }
-    else if (0 == i && 0 != compareRes && (SMALLERE == cond || SMALLER == cond))  // look up the left block
-    {
-        if (0 == leaf->prev)
-        {
-#ifdef NOBUFFER
-            free(leaf);
-#endif
-            return count;
-        }
-        leafOffset = leaf->prev;
-        i = (int)leaf->n - 1;
-#ifdef NOBUFFER
-        free(leaf);
-#endif
-        leaf = (leaf_t_str *)ReadBlock(tree->path, leafOffset, BLOCK_SIZE);
-    }
-
-    tupleOffset = leaf->children[i].value;
-    recordsOffset = tupleOffset - tupleOffset % BLOCK_SIZE;
-    // read the block we found
-    curBlock = (char *)ReadBlock(fileName, recordsOffset, BLOCK_SIZE);
-    tuple = (char *)curBlock+ tupleOffset % BLOCK_SIZE;
-    // if the compare condition is "==", ">=" or "<=" we might have to print the tuple whose offset == tupleOffset
-    if ((EQUAL == cond || LARGERE == cond || SMALLERE == cond) && 0 != CheckTuple(tuple, table, intF, floatF, strF))
-    {
-        PrintTuple(table, tuple, projection, attrMaxLen);
-        count++;
-        if (LARGERE == cond)  // move to next children
-        {
-            i = Move2NextChild_str(tree, leaf, i);
-            tupleOffset = leaf->children[i].value;
-            recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, curBlock);
-        }
-        else if (SMALLERE == cond)  // move to previous children
-        {
-            i = Move2PreviousChild_str(tree, leaf, i);
-            tupleOffset = leaf->children[i].value;
-            recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, curBlock);
-        }
-        if (i < 0)  // no tuples to search any more
-        {
-#ifdef NOBUFFER
-            free(leaf);
-            free(curBlock);
-#endif
-            return count;
-        }
-    }
-    switch (cond)
-    {
-        case LARGERE:
-        case LARGER:  // treat LARGERE and LARGER as LARGER because EQUAL has been dealt with already
-            while(i >= 0)
-            {
-                if (0 != CheckTuple(tuple, table, intF, floatF, strF))
-                {
-                    PrintTuple(table, tuple, projection, attrMaxLen);
-                    count++;
-                }
-                i = Move2NextChild_str(tree, leaf, i);
-                tupleOffset = leaf->children[i].value;
-                recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, curBlock);
-            }
-            break;
-        case SMALLER:
-        case SMALLERE: // treat SMALLERE and SMALLER as LARGER because EQUAL has been dealt with already
-            while(i >= 0)
-            {
-                if (0 != CheckTuple(tuple, table, intF, floatF, strF))
-                {
-                    PrintTuple(table, tuple, projection, attrMaxLen);
-                    count++;
-                }
-                i = Move2PreviousChild_str(tree, leaf, i);
-                tupleOffset = leaf->children[i].value;
-                recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, curBlock);
-            }
-            break;
-        case NOTEQUAL:
-            LinearScan(table, projection, intF, floatF, strF, attrMaxLen);
-            break;
-        default: break;
-    }
-#ifdef NOBUFFER
-    free(leaf);
-    free(curBlock);
-#endif
-    return count;
 }
 
 void ComputeAttrsMaxLen(Table table, int *projection, int *attrMaxLen)
@@ -1005,8 +622,7 @@ int LinearScan(Table table, int *projection, IntFilter intF, FloatFilter floatF,
     off_t offset;
     char *tmpTuple, *curBlock;
     char fileName[MAX_STRING_LENGTH];
-    strcpy(fileName, table->name);
-    strcat(fileName, "_record.db");
+    sprintf(fileName, "%s_record.db", table->name);
     // compute number of blocks in table
     isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
     blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
@@ -1032,114 +648,6 @@ int LinearScan(Table table, int *projection, IntFilter intF, FloatFilter floatF,
     return count;
 }
 
-int Move2NextChild_int(BPlusTree tree, leaf_t_int *leaf, int i)
-{
-    if (i < (int)leaf->n - 1)
-    {
-        return i + 1;
-    }
-    // have to read the next block
-    if (0 == leaf->next)  // no next block
-    {
-        return -1;
-    }
-#ifdef NOBUFFER
-    free(leaf);
-#endif
-    leaf = (leaf_t_int *)ReadBlock(tree->path, leaf->next, sizeof(leaf_t_int));
-    return 0;
-}
-
-int Move2PreviousChild_int(BPlusTree tree, leaf_t_int *leaf, int i)
-{
-    if (i >= 0)
-    {
-        return i - 1;
-    }
-    // have to read the next block
-    if (0 == leaf->prev)  // no next block
-    {
-        return -1;
-    }
-#ifdef NOBUFFER
-    free(leaf);
-#endif
-    leaf = (leaf_t_int *)ReadBlock(tree->path, leaf->prev, sizeof(leaf_t_int));
-    return 0;
-}
-
-int Move2NextChild_float(BPlusTree tree, leaf_t_float *leaf, int i)
-{
-    if (i < (int)leaf->n - 1)
-    {
-        return i + 1;
-    }
-    // have to read the next block
-    if (0 == leaf->next)  // no next block
-    {
-        return -1;
-    }
-#ifdef NOBUFFER
-    free(leaf);
-#endif
-    leaf = (leaf_t_float *)ReadBlock(tree->path, leaf->next, sizeof(leaf_t_float));
-    return 0;
-}
-
-int Move2PreviousChild_float(BPlusTree tree, leaf_t_float *leaf, int i)
-{
-    if (i >= 0)
-    {
-        return i - 1;
-    }
-    // have to read the next block
-    if (0 == leaf->prev)  // no next block
-    {
-        return -1;
-    }
-#ifdef NOBUFFER
-    free(leaf);
-#endif
-    leaf = (leaf_t_float *)ReadBlock(tree->path, leaf->prev, sizeof(leaf_t_float));
-    return 0;
-}
-
-int Move2NextChild_str(BPlusTree tree, leaf_t_str *leaf, int i)
-{
-    if (i < (int)leaf->n - 1)
-    {
-        return i + 1;
-    }
-    // have to read the next block
-    if (0 == leaf->next)  // no next block
-    {
-        return -1;
-    }
-#ifdef NOBUFFER
-    free(leaf);
-#endif
-    leaf = (leaf_t_str *)ReadBlock(tree->path, leaf->next, sizeof(leaf_t_str));
-    return 0;
-}
-
-int Move2PreviousChild_str(BPlusTree tree, leaf_t_str *leaf, int i)
-{
-    if (i >= 0)
-    {
-        return i - 1;
-    }
-    // have to read the next block
-    if (0 == leaf->prev)  // no next block
-    {
-        return -1;
-    }
-#ifdef NOBUFFER
-    free(leaf);
-#endif
-    leaf = (leaf_t_str *)ReadBlock(tree->path, leaf->prev, sizeof(leaf_t_str));
-    return 0;
-}
-
 void InsertTupleIndex(Table table, char *tuple, off_t offset)
 {
     int i, attrOffset[MAX_ATTRIBUTE_NUM];
@@ -1152,7 +660,8 @@ void InsertTupleIndex(Table table, char *tuple, off_t offset)
     {
         if (table->attributes[i].index >= 0)  // if the attribute has an index
         {
-            GetTree(table->attributes[i].index, &tree);
+            sprintf(tree.path, "%s_%s_index.db", table->name, table->attributes[i].name);
+            GetTree(&tree);
             // generate filter and search the unique attribute value
             switch (table->attributes[i].type)
             {
@@ -1185,7 +694,8 @@ void RemoveTupleIndex(Table table, char *tuple)
     {
         if (table->attributes[i].index >= 0)  // if the attribute has an index
         {
-            GetTree(table->attributes[i].index, &tree);
+            sprintf(tree.path, "%s_%s_index.db", table->name, table->attributes[i].name);
+            GetTree(&tree);
             // generate filter and search the unique attribute value
             switch (table->attributes[i].type)
             {
@@ -1206,13 +716,13 @@ void RemoveTupleIndex(Table table, char *tuple)
     }
 }
 
-int GetTree(int indexNum, BPlusTree tree)
+int GetTree(BPlusTree tree)
 {
     meta_t *meta;
-    GetIndexFileName(indexNum, tree->path);
+    //GetIndexFileName(indexNum, tree->path);
     if ('\0' == tree->path[0])  // Oops, an invalid index file
     {
-        printf("[ERROR] index file not found. You need to make sure that after drop a index, the meta data of a table should be updated.\n");
+        printf("[ERROR] index file not found. You need to make sure that after drop an index, the meta data of a table should be updated.\n");
         return 1;
     }
     // read the meta data of tree first
@@ -1231,18 +741,18 @@ void UpdateTupleIndex(Table table, char *tuple, off_t newOffset)
     InsertTupleIndex(table, tuple, newOffset);
 }
 
-off_t GetTuple(char *fileName, off_t tupleOffset, char **tuple, off_t recordsOffset, char *curBlock)
+off_t GetTuple(char *fileName, off_t tupleOffset, char **tuple, off_t recordsOffset, char **curBlock)
 {
     if (recordsOffset != tupleOffset - tupleOffset % BLOCK_SIZE)
     {
         recordsOffset = tupleOffset - tupleOffset % BLOCK_SIZE;
         // read the block we found
-    #ifdef NOBUFFER
-        free(curBlock);
-    #endif
-        curBlock = (char *)ReadBlock(fileName, recordsOffset, BLOCK_SIZE);
+#ifdef NOBUFFER
+        free(*curBlock);
+#endif
+        *curBlock = (char *)ReadBlock(fileName, recordsOffset, BLOCK_SIZE);
 
     }
-    *tuple = (char *)curBlock+ tupleOffset % BLOCK_SIZE;
+    *tuple = (char *)(*curBlock)+ tupleOffset % BLOCK_SIZE;
     return recordsOffset;
 }

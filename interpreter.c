@@ -144,7 +144,7 @@ struct TableRecord GetTable(char* table_name)
      memcpy(&t,table,sizeof(struct TableRecord));
      free(table);
      return t;
- }   
+ }
     /*
 struct TableRecord __DEBUG__table;//this is for my module test, delete it when catalog finished
 struct TableRecord GetTable(char* table_name){//this is for my module test, delete it when catalog finished
@@ -248,6 +248,9 @@ struct AttributeRecord i_create_table_attribute(char* s){//s:"xh char(10) unique
         x.type=stringType;
         size+=1;
     }else {
+#ifdef DEBUG
+        printf("t[0]: %s\nt[1]: %s\nt[2]: %s\nt[3]: %s\nt[4]: \"%s\"\n", t[0], t[1], t[2], t[3], t[4]);
+#endif
         ErrorSyntax("int/float/char()");
         size=255;
     }
@@ -276,7 +279,7 @@ int i_create_table(char* table_name,char* s){//table_name:"student", s:"xh char(
             if(strstr(t[5],"primary key")==t[5]){//"primary key (xh)"
                 char key_name[MAX_NAME_LENGTH]={0};
                 if(in("(",t[5])) sscanf(trim(t[5]+strlen("primary key")),"(%[^)])",key_name);
-                else strcpy(key_name,trim(t[5]+strlen("primary key")));
+                else strcpy(key_name,trim(t[4]+strlen("primary key")));
                 for(j=0;j<MAX_ATTRIBUTE_NUM&&ta.attributes[j].name[0];j++){
                     if(e(ta.attributes[j].name,key_name)){
                         ta.primaryKey=j;
@@ -569,6 +572,10 @@ int interpreter(char* s){
     else {ErrorSyntax("create/drop/select/insert/delete");goto False;}
     return 0;
 False:
+#ifdef DEBUG
+    printf("t[0]: \"%s\"\n", t[0]);
+    printf("result: %d\n", e(t[0], "create"));
+#endif
     print_error();
     error_message[0]=0;
     TRUEFLAG=1;
