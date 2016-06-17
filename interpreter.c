@@ -66,6 +66,7 @@ printf("  [Before dh]%s#id:%d\n",s,id);
     puts(test2);              //
 */
 char* i_get_and(char* s,int id){//s:"a<=10 and b>2 and c='hello'",id:buffer id, return=t[id]:"a < 1",s:"b>2 and c='hello'"
+char temp[9999];
     int i=0,l=strlen(s);char* p=t[id];
     if (!in("and",s)) {
         for(i=0;i<l;i++){
@@ -90,7 +91,8 @@ char* i_get_and(char* s,int id){//s:"a<=10 and b>2 and c='hello'",id:buffer id, 
                 *p++=s[i];
             }
         }*p=0;
-        strcpy(s,s+i+5);
+        strcpy(temp,s+i+5);
+        strcpy(s,temp);
     }
     return t[id];
 }/*TEST:
@@ -103,6 +105,7 @@ char* i_get_and(char* s,int id){//s:"a<=10 and b>2 and c='hello'",id:buffer id, 
     puts(test);             //
 */
 char* i_get_kh(char* s,int id){//Get the content in the (), s:"(xh char(10), ..) ;",id: buffer id, return=t[id]:"xh char(10), .."
+char temp[9999];
     char* p=t[id];int i=0,l=strlen(s), count=1;
     if(s[0]!='(') {return NULL;}
     while(count>0&&i<l){
@@ -112,7 +115,8 @@ char* i_get_kh(char* s,int id){//Get the content in the (), s:"(xh char(10), ..)
         if(count>0) *p++=s[i];
     }
     if(s[i]!=')')  {return NULL;}
-    strcpy(s,s+i+1);
+    strcpy(temp,s+i+1);
+    strcpy(s,temp);
     return t[id];
 }
 /*TEST:
@@ -120,10 +124,12 @@ char* i_get_kh(char* s,int id){//Get the content in the (), s:"(xh char(10), ..)
     puts(i_get_kh(test,0));
 */
 char* trim(char* s){
+    char temp[9999];
     int i=0,j=strlen(s);
     while(s[i]==' ') i++;
     while(s[j]==' ') j--;s[j+1]=0;
-    strcpy(s,s+i);
+    strcpy(temp,s+i);
+    strcpy(s,temp);
     return s;
 }/*TEST:
     char test[]="  a, bb  ";
