@@ -6,6 +6,7 @@
 #define MAX_STRING_LENGTH 256
 #define DEBUG
 // three types of data, int, float, and string (the size of a string is between 0 and 255)
+enum DataType{intType, floatType, stringType};
 struct AttributeRecord
 {
     char name[MAX_NAME_LENGTH];  // the length of the name of attributes should be less than 16

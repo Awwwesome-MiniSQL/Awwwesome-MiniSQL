@@ -1,7 +1,8 @@
 #ifndef CATALOG_H
 #define CATALOG_H
-
 #define TRUEADDR(ADDR) ((ADDR) * BLOCK_SIZE + 0x20000)
+#include "../MiniSQL.h"
+typedef unsigned long word;
 
 struct FileTree
 {
