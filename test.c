@@ -31,16 +31,6 @@ int main() {
     interpreter(sql4);
     puts("========================");
 
-    //Create Table
-    char sql3[]="create table student (xh char(10) unique primary key,id int,name char(20),major char(30),GPA float);";
-    interpreter(sql3);//this is preparing for call insert and select
-    puts("========================");
-
-    //Insert
-    char sql4[]="insert into student values (\"3140105754\",1,\"Chen Yuan\",\"Biology\",3.55)";
-    interpreter(sql4);
-    puts("========================");
-
     //Select
     //char sql5[]="select xh,GPA from student where GPA>4 and id<5 and xh='314' and GPA<5";
     char sql5[]="select * from student";
