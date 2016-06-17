@@ -6,6 +6,7 @@ NOT FINISHED YET...
 #include <string.h>
 #include "MiniSQL.h"
 #include "Record/Record.h"
+#include "BPlusTree/BPlusTree.h"
 int TRUEFLAG=1;
 const int F=-1;
 #define safe(function) do {if(function==F) goto False;if(TRUEFLAG==F) goto False;} while(0)
@@ -127,6 +128,24 @@ char* trim(char* s){
 
 
 //API
+struct AttributeRecord GetAttribute(Table table,char* name,int* attrIndex){//name: Attribute name, return: the struct AttributeRecord
+    int i;struct AttributeRecord x;
+    for(i=0;i<table->attrNum;i++)
+        if(e(name,table->attributes[i].name)) break;
+    if(i==table->attrNum){sprintf(error_message,"column \"%s\" not found in the table",name);TRUEFLAG=F;return x;}
+    *attrIndex=i;
+    return table->attributes[i];
+}
+struct TableRecord GetTable(char* table_name)
+{
+     char fileName[256];struct TableRecord t;
+     sprintf(fileName,  "%s_record.db", table_name);
+     Table table = (Table)ReadBlock(fileName,0,sizeof(struct TableRecord));
+     memcpy(&t,table,sizeof(struct TableRecord));
+     free(table);
+     return t;
+ }   
+    /*
 struct TableRecord __DEBUG__table;//this is for my module test, delete it when catalog finished
 struct TableRecord GetTable(char* table_name){//this is for my module test, delete it when catalog finished
     struct TableRecord x;x.name[0]=0;
@@ -136,14 +155,7 @@ struct TableRecord GetTable(char* table_name){//this is for my module test, dele
         return x;
     }else return __DEBUG__table;
 }
-struct AttributeRecord GetAttribute(Table table,char* name,int* attrIndex){//name: Attribute name, return: the struct AttributeRecord
-    int i;struct AttributeRecord x;
-    for(i=0;i<table->attrNum;i++)
-        if(e(name,table->attributes[i].name)) break;
-    if(i==table->attrNum){sprintf(error_message,"column \"%s\" not found in the table",name);TRUEFLAG=F;return x;}
-    *attrIndex=i;
-    return table->attributes[i];
-}
+
 int CreateTable(Table x){
     int i; struct AttributeRecord a;
     print("Function: CreateTable\n");
@@ -213,6 +225,8 @@ int DeleteTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrF
     }
     return 0;
 }
+*/
+
 //Interpreter Function, i_...
 void ErrorSyntax(const char* s){
     TRUEFLAG=F;
@@ -561,41 +575,3 @@ False:
     return F;
 }
 
-
-int main() {
-    //TEST:
-    //Not Implemented:Create Drop Index
-    char sql1[]="create index name_index on student (name)";
-    interpreter(sql1);
-    puts("========================");
-
-    char sql2[]="drop index name_index on student";
-    interpreter(sql2);
-    puts("========================");
-
-    //Create Table
-    char sql3[]="create table student (xh char(10) unique primary key,id int,name char(20),major char(30),GPA float);";
-    interpreter(sql3);//this is preparing for call insert and select
-    puts("========================");
-
-    //Insert
-    char sql4[]="insert into student values (\"3140105754\",1,\"Chen Yuan\",\"Biology\",3.55)";
-    interpreter(sql4);
-    puts("========================");
-
-    //Select
-    char sql5[]="select xh,GPA from student where GPA>4 and id<5 and xh='314' and GPA<5";
-    interpreter(sql5);
-    puts("========================");
-
-    //Delete
-    char sql6[]="delete from student where GPA>4 and id<5 and xh='314' and GPA<5";
-    interpreter(sql6);
-    puts("========================");
-
-    //Drop
-    char sql7[]="drop table student";
-    interpreter(sql7);
-    puts("========================");
-    return 0;
-}

@@ -8,97 +8,45 @@
 #include "BPlusTree/BPlusTreeFloat.h"
 #include "BPlusTree/BPlusTreeStr.h"
 #include "Catalog/Catalog.h"
+#include "interpreter.c"
 
-int main()
-{
-    struct TableRecord table;
-    int i;
-    // get input from interpreter
-    // attribute 0: name
-    strcpy(table.name, "student");
-    strcpy(table.attributes[0].name, "ID");
-    table.attrNum = 0;
-    table.attributes[0].type = intType;
-    table.attributes[0].size = 4;
-    table.attributes[0].unique = 1;
-    table.attributes[0].index = 0;
-    table.attrNum++;
-    // attribute 1: ID
-    strcpy(table.attributes[1].name, "name");
-    table.attributes[1].type = stringType;
-    table.attributes[1].size = 4;
-    table.attributes[1].unique = 0;
-    table.attributes[1].index = -1;
-    table.primaryKey = 0;
-    table.recordSize = 0;
-    table.attrNum++;
-    // compute record
-    for (i = 0; i < table.attrNum; i++)
-    {
-        table.recordSize += table.attributes[i].size;
-    }
-    printf("Create a table ...\n");
-    CreateTable(&table);
-    char *tuple = (char *)malloc(table.recordSize);
-    // insert int primary key
+int main() {
+    //TEST:
+    //Not Implemented:Create Drop Index
+    char sql1[]="create index name_index on student (name)";
+    interpreter(sql1);
+    puts("========================");
+
+    char sql2[]="drop index name_index on student";
+    interpreter(sql2);
+    puts("========================");
+
+    //Create Table
+    char sql3[]="create table student (xh char(10) unique primary key,id int,name char(20),major char(30),GPA float);";
+    interpreter(sql3);//this is preparing for call insert and select
+    puts("========================");
+
+    //Insert
+    char sql4[]="insert into student values (\"3140105754\",1,\"Chen Yuan\",\"Biology\",3.55)";
+    interpreter(sql4);
+    puts("========================");
+
+    //Select
+    //char sql5[]="select xh,GPA from student where GPA>4 and id<5 and xh='314' and GPA<5";
+    char sql5[]="select * from student";
+    interpreter(sql5);
+    puts("========================");
+
+    //Delete
+    char sql6[]="delete from student";// where GPA>4 and id<5 and xh='314' and GPA<5";
+    interpreter(sql6);
+    puts("========================");
+    //interpreter("select * from student");
+    //Drop
     /*
-    for (i = 0; i < 1000; i++)
-    {
-        *(int *)tuple = i;
-        *(int *)(tuple + 4) = i;
-        InsertTuple(&table, tuple);
-    }
-    *(int *)tuple = 4;
-    *(int *)(tuple + 4) = 998;
-    InsertTuple(&table, tuple);
-    free(tuple);
+    char sql7[]="drop table student";
+    interpreter(sql7);
     */
-    // insert float primary key
-    /*
-    for (i = 0; i < 10; i++)
-    {
-        *(int *)tuple = i;
-        *(float *)(tuple + 4) = (float)(i + 0.1);
-        InsertTuple(&table, tuple);
-    }
-    *(int *)tuple = 4;
-    *(float *)(tuple + 4) = (float)(998 + 0.1);
-    InsertTuple(&table, tuple);
-    */
-
-    printf("Insert tuples one by one ...\n");
-    for (i = 0; i < 10; i++)
-    {
-        *(int *)tuple = i;
-        strcpy(tuple + 4, "ABC");
-        InsertTuple(&table, tuple);
-    }
-    i = 4;
-    *(int *)tuple = i;
-    strcpy(tuple + 4, "A");
-    struct IntFilterType intF, *nextIF;
-    intF.attrIndex = 0;
-    intF.cond = LARGER;
-    intF.src = 4;
-    nextIF = (struct IntFilterType *)malloc(sizeof(struct IntFilterType));
-    intF.next = nextIF;
-    nextIF->attrIndex = 0;
-    nextIF->cond = SMALLERE;
-    nextIF->src = 7;
-    nextIF->next = NULL;
-    printf("minisql> select * from student\n");
-    SearchTuples(&table, NULL, NULL, NULL, NULL);
-    printf("minisql> select * from student where ID > 4 and ID <= 7\n");
-    SearchTuples(&table, &intF, NULL, NULL, NULL);
-    printf("minisql> delete from student where ID > 4 and ID <= 7\n");
-    DeleteTuples(&table, &intF, NULL, NULL);
-    //InsertTuple(&table, tuple);
-
-    //RemoveTable(&table);
-    //printf("recordsPerBlock: %d\n", table.recordsPerBlock);
-    free(tuple);
-    printf("minisql> select * from student\n");
-    SearchTuples(&table, NULL, NULL, NULL, NULL);
-    free(nextIF);
+    puts("========================");
     return 0;
 }
