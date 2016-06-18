@@ -128,13 +128,14 @@ char* trim(char* src){
     char temp[9999];int i=0,j=strlen(src),k;
     strcpy(temp,src);
     for(k=0;k<j;k++) if(temp[k]=='\n'||temp[k]=='\r'||temp[k]=='\t') temp[k]=' ';
-    j=strlen(temp);
+    j=strlen(temp)-1;
     while(temp[i]==' ') i++;
-    while(j>0) {
+    /*while(j>0) {
         if(temp[j--]==';') { temp[j+1]=0; break; }
-    }
-    //while(temp[j]==' '||temp[j]==';') temp[j--]=0;
-    //temp[j+1]=0;
+    }*/
+    j=strlen(temp)-1;
+    while(temp[j]==' '||temp[j]==';') j--;
+    temp[j+1]=0;
     strcpy(src,temp+i);
     return src;
 }/*TEST:
