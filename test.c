@@ -9,8 +9,14 @@
 #include "BPlusTree/BPlusTreeStr.h"
 #include "Catalog/Catalog.h"
 #include "interpreter.c"
-#define DEBUG
+//#define DEBUG
 int main() {
+    char c[9999];
+    while(1){
+        gets(c);
+        interpreter_more(c);
+    }
+    
     //TEST:
     //Not Implemented:Create Drop Index
     char sql1[]="create index name_index on student (name)";
@@ -28,7 +34,7 @@ int main() {
     puts("========================");
 
     //Insert
-    char sql4[]="insert into student values (\"3140105754\",1,\"Chen Yuan\",\"Biology\",3.55)";
+    char sql4[]="insert into student values (\"3140105754\",1,\"Chen Yuan\",\"Biology\",3.55);";
     interpreter(sql4);
     puts("========================");
 

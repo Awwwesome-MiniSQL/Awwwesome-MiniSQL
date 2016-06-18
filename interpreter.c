@@ -41,8 +41,7 @@ char* w(char* s,int id) { //w:getword, s:"create table classroom...", id:buffer 
     puts(test);            //b   c
 */
 char* i_get_dh(char* s,int id){//s:"a,b,c",id:buffer id, return=t[id]:"a",s:"b,c"
-char temp[9999];
-printf("  [Before dh]%s#id:%d\n",s,id);
+    char temp[9999];
     if (!in(",",s)) {
         strcpy(t[id],s);
         s[0]=0;
@@ -55,7 +54,6 @@ printf("  [Before dh]%s#id:%d\n",s,id);
         strcpy(temp,s+i+1);
         strcpy(s,temp);
     }
-    printf("  [After dh]%s#%s#id:%d\n",s,t[id],id);
     return t[id];
 }/*TEST:
     char test[]="a,bbb,c";
@@ -150,7 +148,9 @@ struct TableRecord GetTable(char* table_name)
 {
      char fileName[256];struct TableRecord t;
      sprintf(fileName,  "%s_record.db", table_name);
+     /*Debug:*/printf("[ReadBlock]\n");
      Table table = (Table)ReadBlock(fileName,0,sizeof(struct TableRecord));
+      /*Debug:*/printf("[!!!After_ReadBlock]\n");
      memcpy(&t,table,sizeof(struct TableRecord));
      free(table);
      return t;
@@ -244,7 +244,6 @@ void ErrorSyntax(const char* s){
 }
 
 struct AttributeRecord i_create_table_attribute(char* s){//s:"xh char(10) unique"
-puts(s);
     struct AttributeRecord x;int size;
     w(s,6);
     strcpy(x.name,t[6]);
@@ -252,7 +251,7 @@ puts(s);
     if(e(t[4],"integer")||e(t[4],"int")){
         x.type=intType;
 #ifdef DEBUG
-    printf("t[0]: %s\nt[1]: %s\nt[2]: %s\nt[3]: %s\nt[4]: \"%s\"\n", t[0], t[1], t[2], t[3], t[4]);
+    //printf("t[0]: %s\nt[1]: %s\nt[2]: %s\nt[3]: %s\nt[4]: \"%s\"\n", t[0], t[1], t[2], t[3], t[4]);
 #endif
         size=4;
     }else if(e(t[4],"float")){
@@ -283,9 +282,8 @@ int i_create_table(char* table_name,char* s){//table_name:"student", s:"xh char(
     for(i=0;i<MAX_ATTRIBUTE_NUM;i++) ta.attributes[i].name[0]=0;
     i=0;
     while(!e(s,"")){
-        printf("[Before i_get_dh]%s\n",s);
         i_get_dh(s,5);//s.split(',')
-        if(!in("primary key",t[5])) {printf("Debuging:%s\n",t[5]);ta.attributes[i++]=i_create_table_attribute(t[5]);safe2();}//normal one
+        if(!in("primary key",t[5])) {ta.attributes[i++]=i_create_table_attribute(t[5]);safe2();}//normal one
         else {
             trim(t[5]);
             if(strstr(t[5],"primary key")==t[5]){//"primary key (xh)"
@@ -305,7 +303,6 @@ int i_create_table(char* table_name,char* s){//table_name:"student", s:"xh char(
                     return F;
                 }
             }else{
-                printf("DEBUG:");puts(t[5]);
                 ta.attributes[i++]=i_create_table_attribute(t[5]);safe2();
                 ta.primaryKey=i-1;
             }
@@ -435,6 +432,8 @@ int i_select(char* s){
     if(!e("from",w(s,2))){ErrorSyntax("select ... from");return F;}
     w(s,2);
     struct TableRecord table=GetTable(t[2]);safe2();
+    /*DEBUG:*/print("[i_select]1\n");
+    puts(t[1]);
     if(e("*",t[1])){
         for(i=0;i<table.attrNum;i++) projection[i]=i;
     }else{
@@ -446,6 +445,9 @@ int i_select(char* s){
             projection[i++]=j;
         }
     }
+    
+
+    
     if(!e(s,"")){
         if(!e(w(s,4),"where")) {ErrorSyntax("select ... from ... where");return F;}
         while(!e(i_get_and(s,4),"")){
@@ -506,7 +508,7 @@ False:
 }
 
 int i_delete(char* s){
-    int i,j,attrIndex;enum CmpCond cond;
+    int attrIndex;enum CmpCond cond;
     struct IntFilterType memory_i[MAX_ATTRIBUTE_NUM];IntFilter pi=NULL,pi_now=NULL;int I_F=-1;//the chain memory from array, pi->chain first node, I_F chain now node index
     struct FloatFilterType memory_f[MAX_ATTRIBUTE_NUM];FloatFilter pf=NULL,pf_now=NULL;int F_F=-1;
     struct StrFilterType memory_s[MAX_ATTRIBUTE_NUM];StrFilter ps=NULL,ps_now=NULL;int S_F=-1;
@@ -577,6 +579,7 @@ void print_error(){
 };
 
 int interpreter(char* s){
+    if(strlen(s)>0&&s[strlen(s)-1]==';') s[strlen(s)-1]=0;
     w(s,0);
     if(e(t[0],"create")) safe(i_create(s));
     else if(e(t[0],"drop")) safe(i_drop(s));
@@ -587,8 +590,8 @@ int interpreter(char* s){
     return 0;
 False:
 #ifdef DEBUG
-    printf("t[0]: \"%s\"\n", t[0]);
-    printf("result: %d\n", e(t[0], "create"));
+    //printf("t[0]: \"%s\"\n", t[0]);
+    //printf("result: %d\n", e(t[0], "create"));
 #endif
     print_error();
     error_message[0]=0;
@@ -596,3 +599,9 @@ False:
     return F;
 }
 
+int interpreter_more(char *s){
+    static char command[9999]; int ret;
+    strcat(command,s);
+    if(in(";",s)) {ret=interpreter(command); command[0]=0;return ret;}
+    else return 0;
+}

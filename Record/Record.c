@@ -13,13 +13,6 @@ int CreateTable(Table table)
 {
     int i; 
     struct AttributeRecord a;
-    printf("Function: CreateTable\n");
-    printf("TABLE:\n name:%s\n attrNum:%d\n primaryKey:%d\n recordSize:%d\n recordNum:%d\n recordsPerBlock:%d\n",table->name,table->attrNum,table->primaryKey,table->recordSize,table->recordNum,table->recordsPerBlock);
-    for(i=0;i<table->attrNum;i++)
-    {
-        a=table->attributes[i];
-        //printf(" Name:%s\n Type:%d\n Size:%d\n Unique:%d\n Index:%d\n",a.name,a.type,a.size,(int)a.unique,a.index);
-    }
     //@TODO we need Catalog manager here to check whether the table exists
     FILE *fp;
     char fileName[MAX_STRING_LENGTH];
@@ -46,7 +39,6 @@ int CreateTable(Table table)
     sprintf(fileName, "%s_record.db", table->name);
     fp = fopen(fileName, "wb");
     fclose(fp);
-    puts(fileName);
     WriteBlock(fileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
     // initialize a BPlusTree
     struct tree_t tree;
@@ -72,6 +64,7 @@ int RemoveTable(Table table)
 
 int SearchTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF, int *projection)  // do linear scan
 {
+        /*DEBUG:*/printf("[SearchTuples]\n");
     int i, count;
     int attrMaxLen[MAX_ATTRIBUTE_NUM], fullProjection[MAX_ATTRIBUTE_NUM];
     IntFilter curIF = intF;
