@@ -150,6 +150,12 @@ struct TableRecord GetTable(char* table_name)
      sprintf(fileName,  "%s_record.db", table_name);
      /*Debug:*/printf("[ReadBlock]\n");
      Table table = (Table)ReadBlock(fileName,0,sizeof(struct TableRecord));
+     if (NULL == table)
+     {
+         strcpy(error_message, "Table not found!");
+         TRUEFLAG = F;
+         return t;
+     }
       /*Debug:*/printf("[!!!After_ReadBlock]\n");
      memcpy(&t,table,sizeof(struct TableRecord));
      free(table);
@@ -445,9 +451,9 @@ int i_select(char* s){
             projection[i++]=j;
         }
     }
-    
 
-    
+
+
     if(!e(s,"")){
         if(!e(w(s,4),"where")) {ErrorSyntax("select ... from ... where");return F;}
         while(!e(i_get_and(s,4),"")){

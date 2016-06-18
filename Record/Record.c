@@ -11,7 +11,7 @@
 
 int CreateTable(Table table)
 {
-    int i; 
+    int i;
     struct AttributeRecord a;
     //@TODO we need Catalog manager here to check whether the table exists
     FILE *fp;
@@ -50,6 +50,8 @@ int CreateTable(Table table)
         // @TODO ask Catalog to add the index
         InitTree(&tree, fileName, table->attributes[table->primaryKey].type);
     }
+    // @NOTE output information
+    printf("\n\nCreated table \"%s\".\n\n", table->name);
     return 0;
 }
 
@@ -191,6 +193,8 @@ off_t InsertTuple(Table table, char *tuple)
     table->recordNum++;
     WriteBlock(fileName, table, TABLE_META_OFFSET, BLOCK_SIZE);
     InsertTupleIndex(table, tuple, offset + insertPos);
+    // @NOTE output info
+    printf("\n\nQuery OK, 1 row affected\n\n");
     return offset + insertPos;
 }
 

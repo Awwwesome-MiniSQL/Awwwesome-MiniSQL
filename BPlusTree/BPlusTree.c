@@ -11,6 +11,10 @@ void *ReadBlock(char *fileName, off_t offset, size_t size)
     int n;
     block = (void *)malloc(size);  // @NOTE don't forget to free space later
     fp = fopen(fileName, "rb+");
+    if (NULL == fp)
+    {
+        return NULL;
+    }
     fseek(fp, offset, SEEK_SET);
     n = fread(block, size, 1, fp);  // @NOTE be careful because it must read Successfully
     if (n != 1)
