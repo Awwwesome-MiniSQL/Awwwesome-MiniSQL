@@ -1,11 +1,11 @@
 create table student2 (
-	id int,
-	name char(12) unique,
-	score float,
-	primary key(id) 
+ id int,
+ name char(12) unique,
+ score float,
+ primary key(id) 
 );
 
-execfile instruction0.txt;
+execfile Data/instruction0.txt;
 
 execfile instruction1.txt;
 

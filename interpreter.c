@@ -619,8 +619,16 @@ False:
 }
 
 int interpreter_more(char *s){
-    static char command[9999]; int ret;
+    static char command[9999]; 
+    char nowcommand[9999];
+    int ret;
+    if(e("quit",s)) i_quit();
     strcat(command,s);
-    if(in(";",s)) {ret=interpreter(command); command[0]=0;return ret;}
+    if(in(";",s)) {
+        strcpy(nowcommand,command);
+        command[0]=0;
+        ret=interpreter(nowcommand); 
+        return ret;
+    }
     else return 0;
 }
