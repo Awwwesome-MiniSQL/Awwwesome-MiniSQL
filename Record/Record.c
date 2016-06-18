@@ -12,7 +12,6 @@
 int CreateTable(Table table)
 {
     int i;
-    struct AttributeRecord a;
     //@TODO we need Catalog manager here to check whether the table exists
     FILE *fp;
     char fileName[MAX_STRING_LENGTH];
@@ -66,7 +65,6 @@ int RemoveTable(Table table)
 
 int SearchTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF, int *projection)  // do linear scan
 {
-        /*DEBUG:*/printf("[SearchTuples]\n");
     int i, count;
     int attrMaxLen[MAX_ATTRIBUTE_NUM], fullProjection[MAX_ATTRIBUTE_NUM];
     IntFilter curIF = intF;

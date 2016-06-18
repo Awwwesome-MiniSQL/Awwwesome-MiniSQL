@@ -1,4 +1,4 @@
-create table student2(
+create table student2 (
 	id int,
 	name char(12) unique,
 	score float,

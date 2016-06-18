@@ -148,7 +148,6 @@ struct TableRecord GetTable(char* table_name)
 {
      char fileName[256];struct TableRecord t;
      sprintf(fileName,  "%s_record.db", table_name);
-     /*Debug:*/printf("[ReadBlock]\n");
      Table table = (Table)ReadBlock(fileName,0,sizeof(struct TableRecord));
      if (NULL == table)
      {
@@ -156,7 +155,6 @@ struct TableRecord GetTable(char* table_name)
          TRUEFLAG = F;
          return t;
      }
-      /*Debug:*/printf("[!!!After_ReadBlock]\n");
      memcpy(&t,table,sizeof(struct TableRecord));
      free(table);
      return t;
@@ -365,7 +363,7 @@ int i_drop(char* s){
         w(s,2);//get the table name
         struct TableRecord x;
         strcpy(x.name,t[2]);
-        RemoveTable(&x);
+        RemoveTable(&x);safe2();
     }
     else if(e(t[1],"index")) {
         printf("!drop index not implemented\n");
@@ -438,8 +436,6 @@ int i_select(char* s){
     if(!e("from",w(s,2))){ErrorSyntax("select ... from");return F;}
     w(s,2);
     struct TableRecord table=GetTable(t[2]);safe2();
-    /*DEBUG:*/print("[i_select]1\n");
-    puts(t[1]);
     if(e("*",t[1])){
         for(i=0;i<table.attrNum;i++) projection[i]=i;
     }else{
@@ -584,6 +580,20 @@ void print_error(){
     fprintf(stderr,"Error: %s\n",error_message);
 };
 
+int interpreter_more(char *s);
+
+int i_exec(char* filename){
+    FILE* fp=fopen(filename,"r");
+    char line[9999];
+    if(fp==NULL) {sprintf(error_message,"File %s Not Found!",filename);TRUEFLAG=F;return F;}
+    while(fgets(line,9999,fp)!=NULL) interpreter_more(line);
+    return 0;
+}
+
+void i_quit(){
+    exit(0);
+}
+
 int interpreter(char* s){
     if(strlen(s)>0&&s[strlen(s)-1]==';') s[strlen(s)-1]=0;
     w(s,0);
@@ -592,6 +602,9 @@ int interpreter(char* s){
     else if(e(t[0],"insert")&&e(w(s,0),"into")) safe(i_insert(s));
     else if(e(t[0],"select")) safe(i_select(s));
     else if(e(t[0],"delete")) safe(i_delete(s));
+    else if(e(t[0],"exec")) safe(i_exec(s));
+    else if(e(t[0],"execfile")) safe(i_exec(s));
+    else if(e(t[0],"quit")) i_quit();
     else {ErrorSyntax("create/drop/select/insert/delete");goto False;}
     return 0;
 False:
