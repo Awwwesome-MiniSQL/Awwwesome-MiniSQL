@@ -18,7 +18,7 @@ int main()
     strcpy(table.name, "student");
     strcpy(table.attributes[0].name, "ID");
     table.attrNum = 0;
-    table.attributes[0].type = intType;
+    table.attributes[0].type = floatType;
     table.attributes[0].size = 4;
     table.attributes[0].unique = 1;
     table.attributes[0].index = 0;
@@ -67,9 +67,9 @@ int main()
     */
 
     printf("Insert tuples one by one ...\n");
-    for (i = 0; i < 10000; i++)
+    for (i = 0; i < 100; i++)
     {
-        *(int *)tuple = i;
+        *(float *)tuple = (float)i;
         strcpy(tuple + 4, "ABC");
         InsertTuple(&table, tuple);
     }
