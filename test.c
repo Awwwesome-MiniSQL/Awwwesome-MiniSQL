@@ -60,6 +60,7 @@ static int IsUserQuitCmd(char *pszCmd)
     return 0;
 }
 
+
 //剔除字符串首尾的空白字符(含空格)
 static char *StripWhite(char *pszOrig)
 {
