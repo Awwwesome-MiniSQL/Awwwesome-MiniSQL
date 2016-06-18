@@ -395,7 +395,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
                 }
                 lastTuple = lastBlock + (table->recordNum - 1) % table->recordsPerBlock * table->recordSize;
                 // make sure that the last tuple will not be deleted
-                while (1 == CheckTuple(lastTuple, table, intF, floatF, strF) && (table->recordNum - 1) % table->recordsPerBlock * table->recordSize != j * BLOCK_SIZE + i * table->recordSize)  // while the last tuple is to delete and current tuple != the last one
+                while (1 == CheckTuple(lastTuple, table, intF, floatF, strF) && (table->recordNum - 1) * table->recordSize != j * BLOCK_SIZE + i * table->recordSize)  // while the last tuple is to delete and current tuple != the last one
                 {
                     count++;
                     RemoveTupleIndex(table, tmpTuple);
@@ -414,6 +414,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
                         free(curBlock);
 #endif
                         printf("Query OK, %d row(s) affected\n\n", count);
+                        WriteBlock(fileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
                         return count;
                     }
                     if (0 == table->recordNum % table->recordsPerBlock)
