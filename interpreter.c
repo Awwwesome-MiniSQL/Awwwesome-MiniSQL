@@ -1,6 +1,7 @@
 /*
 NOT FINISHED YET...
 */
+int __CY__DEBUG=0;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -103,6 +104,7 @@ char temp[9999];
     puts(test);             //
 */
 char* i_get_kh(char* s,int id){//Get the content in the (), s:"(xh char(10), ..) ;",id: buffer id, return=t[id]:"xh char(10), .."
+     /*Debug*/if(__CY__DEBUG) {printf("Debug_i_get_kh:%s\n",s);}
 char temp[9999];
     char* p=t[id];int i=0,l=strlen(s), count=1;
     if(s[0]!='(') {return NULL;}
@@ -111,24 +113,30 @@ char temp[9999];
         if(s[i]=='(') count++;
         else if(s[i]==')') count--;
         if(count>0) *p++=s[i];
-    }
+    }*p=0;
     if(s[i]!=')')  {return NULL;}
     strcpy(temp,s+i+1);
     strcpy(s,temp);
+         /*Debug*/if(__CY__DEBUG) {printf("Debug_i_get_kh_After:%s\n",t[id]);}
     return t[id];
 }
 /*TEST:
     char test[]="(abc)";
     puts(i_get_kh(test,0));
 */
-char* trim(char* s){
-    char temp[9999];
-    int i=0,j=strlen(s);
-    while(s[i]==' ') i++;
-    while(s[j]==' ') j--;s[j+1]=0;
-    strcpy(temp,s+i);
-    strcpy(s,temp);
-    return s;
+char* trim(char* src){
+    char temp[9999];int i=0,j=strlen(src),k;
+    strcpy(temp,src);
+    for(k=0;k<j;k++) if(temp[k]=='\n'||temp[k]=='\r'||temp[k]=='\t') temp[k]=' ';
+    j=strlen(temp);
+    while(temp[i]==' ') i++;
+    while(j>0) {
+        if(temp[j--]==';') { temp[j+1]=0; break; }
+    }
+    //while(temp[j]==' '||temp[j]==';') temp[j--]=0;
+    //temp[j+1]=0;
+    strcpy(src,temp+i);
+    return src;
 }/*TEST:
     char test[]="  a, bb  ";
     puts(trim(test));
@@ -384,6 +392,7 @@ int i_insert(char* s){
     i_get_kh(trim(s+strlen("values")),2);
     char* data = (char*)malloc(table.recordSize);char *p=data;
     memset(data,0,table.recordSize);
+     /*Debug*/if(__CY__DEBUG) {printf("Debug:%s",t[2]);}
     for(i=0;i<table.attrNum;i++){
         i_get_dh(t[2],3);
         if(table.attributes[i].type==intType){
@@ -580,21 +589,32 @@ void print_error(){
     fprintf(stderr,"Error: %s\n",error_message);
 };
 
-int interpreter_more(char *s);
+int interpreter_more(char *s,char* history);
+
+static char *StripWhite(char *pszOrig);
 
 int i_exec(char* filename){
+    /*Debug:*/printf("[trim_before]%s\n",filename);
+    trim(filename);
+        /*Debug:*/printf("[trim_after]%s\n",filename);
     FILE* fp=fopen(filename,"r");
-    char line[9999];
-    if(fp==NULL) {sprintf(error_message,"File %s Not Found!",filename);TRUEFLAG=F;return F;}
-    while(fgets(line,9999,fp)!=NULL) interpreter_more(line);
+    char line[9999],history[9999];
+    if(fp==NULL) {sprintf(error_message,"File \"%s\" Not Found!",filename);TRUEFLAG=F;return F;}
+    while(fgets(line,9999,fp)!=NULL) {
+        interpreter_more(line,history);
+    }
     return 0;
 }
 
 void i_quit(){
+    puts("Goodbye~");
     exit(0);
 }
 
-int interpreter(char* s){
+int interpreter(char* command){
+    char s[9999];
+    strcpy(s,command);
+    //if (in("name100",s)) __CY__DEBUG=1;
     if(strlen(s)>0&&s[strlen(s)-1]==';') s[strlen(s)-1]=0;
     w(s,0);
     if(e(t[0],"create")) safe(i_create(s));
@@ -604,7 +624,7 @@ int interpreter(char* s){
     else if(e(t[0],"delete")) safe(i_delete(s));
     else if(e(t[0],"exec")) safe(i_exec(s));
     else if(e(t[0],"execfile")) safe(i_exec(s));
-    else if(e(t[0],"quit")) i_quit();
+    else if(e(t[0],"quit")||e(t[0],"exit")) i_quit();
     else {ErrorSyntax("create/drop/select/insert/delete");goto False;}
     return 0;
 False:
@@ -612,22 +632,20 @@ False:
     //printf("t[0]: \"%s\"\n", t[0]);
     //printf("result: %d\n", e(t[0], "create"));
 #endif
+    printf("[Fail]%s\n",command);
     print_error();
     error_message[0]=0;
     TRUEFLAG=1;
     return F;
 }
 
-int interpreter_more(char *s){
-    static char command[9999]; 
-    char nowcommand[9999];
+int interpreter_more(char *s,char* history){
     int ret;
-    if(e("quit",s)) i_quit();
-    strcat(command,s);
+    if(e("quit",s)||e("exit",s)) i_quit();
+    strcat(history,s);
     if(in(";",s)) {
-        strcpy(nowcommand,command);
-        command[0]=0;
-        ret=interpreter(nowcommand); 
+        ret=interpreter(trim(history));
+        history[0]=0; 
         return ret;
     }
     else return 0;

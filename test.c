@@ -12,7 +12,9 @@
 #include "Catalog/Catalog.h"
 #include "interpreter.c"
 
-typedef int (*CmdProcFunc)(char*);
+char storage_command[9999];
+
+typedef int (*CmdProcFunc)(char*,char*);
 typedef struct{
     char         *pszCmd;
     CmdProcFunc  fpCmd;
@@ -139,8 +141,9 @@ static void InitReadLine(void)
 }
 
 int main(void){
-    printf("Note: Welcome to Interactive Command!\n");
-    printf("      Press 'Quit' to quit!\n\n");
+    printf("      Welcome to MiniSQL Command!\n");
+    printf("      Author: 谢嘉豪, 张扬光, 陈源\n");
+    printf("      Press 'quit' or 'exit' to quit.\n\n");
     InitReadLine();
     while(1){
         char *pszCmdLine = ReadCmdLine();
@@ -149,7 +152,7 @@ int main(void){
             free(pszLineRead);
             break;
         }
-        interpreter_more(pszCmdLine);
+        interpreter_more(pszCmdLine,storage_command);
     }
 
     return 0;
