@@ -999,4 +999,3 @@ insert into student2 values(1080109997,'name9997',61);
 insert into student2 values(1080109998,'name9998',84.5);
 insert into student2 values(1080109999,'name9999',69.5);
 insert into student2 values(1080110000,'name10000',80.5);
-quit;
