@@ -82,4 +82,7 @@ int TraverseSearch_str(Table table, int *projection, BPlusTree tree, my_key_t_st
 int Move2NextChild_str(BPlusTree tree, leaf_t_str **leaf, int i);
 int Move2PreviousChild_str(BPlusTree tree, leaf_t_str **leaf, int i);
 
+int CreateIndex(Table table, char *attrName);
+int LinearAddIndices(Table table, int attrNum, BPlusTree tree);
+int RemoveIndexFile(char *tableName, char *attrName);
 #endif
