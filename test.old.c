@@ -10,13 +10,16 @@
 #include "Catalog/Catalog.h"
 #include "interpreter.c"
 //#define DEBUG
+
+char storage_command[9999];
+
 int main() {
     char c[9999];
     while(1){
         printf("MiniSQL>");
         fgets(c,9999,stdin);
         c[strlen(c)-1]=0;
-        interpreter_more(c);
+        interpreter_more(c,storage_command);
     }
     
     //TEST:
