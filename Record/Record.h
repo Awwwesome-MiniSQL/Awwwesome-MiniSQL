@@ -49,6 +49,10 @@ off_t InsertTuple(Table table, char *tuple);
 int DeleteTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter);
 // @brief find the index file and store the meta data in tree, return 0 if succeeded
 int GetTree(BPlusTree tree);
+// @brief create an index file and insert all keys of tuples in the table, return 0 if succeeded
+int CreateIndex(Table table, char *attrName);
+// @brief remove index file, return 0 if succeeded
+int RemoveIndexFile(char *tableName, char *attrName);
 // =============================================================================
 // @brief try to insert the tuple in all related BPlusTree to test whether it can be inserted
 int IsValidToInsert(Table table, char *tuple, off_t offset);
@@ -82,7 +86,5 @@ int TraverseSearch_str(Table table, int *projection, BPlusTree tree, my_key_t_st
 int Move2NextChild_str(BPlusTree tree, leaf_t_str **leaf, int i);
 int Move2PreviousChild_str(BPlusTree tree, leaf_t_str **leaf, int i);
 
-int CreateIndex(Table table, char *attrName);
 int LinearAddIndices(Table table, int attrNum, BPlusTree tree);
-int RemoveIndexFile(char *tableName, char *attrName);
 #endif
