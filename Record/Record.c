@@ -267,9 +267,6 @@ int FloatAttrCmp(float attrValue, FloatFilter filter)
         case SMALLER: return attrValue < filter->src; break;
         case SMALLERE: return attrValue <= filter->src; break;
     }
-#ifdef DEBUG
-    printf("attrValue: %f, filter->src: %f\n", attrValue, filter->src);
-#endif
     return 0;
 }
 
@@ -852,6 +849,7 @@ int RemoveIndexFile(char *tableName, char *attrName)
     // @TODO invoke Catalog to drop index
     sprintf(fileName, "%s_%s_index.db", tableName, attrName);
     // remove file
+    // @TODO update table's corresponding attribute index num
     remove(fileName);
     return 0;
 }

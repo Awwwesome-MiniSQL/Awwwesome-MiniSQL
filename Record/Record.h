@@ -73,7 +73,6 @@ void RemoveTupleIndex(Table table, char *tuple);
 void UpdateTupleIndex(Table table, char *tuple, off_t newOffset);
 off_t GetTuple(char *fileName, off_t tupleOffset, char **tuple, off_t recordsOffset, char **curBlock);
 
-
 int TraverseSearch_int(Table table, int *projection, BPlusTree tree, my_key_t_int key, enum CmpCond cond, int *attrMaxLen, IntFilter intF, FloatFilter floatF, StrFilter strF);
 int Move2NextChild_int(BPlusTree tree, leaf_t_int **leaf, int i);
 int Move2PreviousChild_int(BPlusTree tree, leaf_t_int **leaf, int i);
