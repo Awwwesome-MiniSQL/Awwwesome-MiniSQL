@@ -1,6 +1,3 @@
-/*
-NOT FINISHED YET...
-*/
 int __CY__DEBUG=0;
 #include <stdio.h>
 #include <stdlib.h>
@@ -154,8 +151,10 @@ struct AttributeRecord GetAttribute(Table table,char* name,int* attrIndex){//nam
     *attrIndex=i;
     return table->attributes[i];
 }
-struct TableRecord GetTable(char* table_name)
-{
+struct TableRecord GetTable(char* table_name){
+    static char buffer_name[256]={0}; static struct TableRecord buffer_t;
+    if(strcmp(table_name,buffer_name)==0) return buffer_t;
+ 
      char fileName[256];struct TableRecord t;
      sprintf(fileName,  "%s_record.db", table_name);
      Table table = (Table)ReadBlock(fileName,0,sizeof(struct TableRecord));
@@ -166,6 +165,7 @@ struct TableRecord GetTable(char* table_name)
          return t;
      }
      memcpy(&t,table,sizeof(struct TableRecord));
+     buffer_t = t;
      free(table);
      return t;
  }
@@ -333,7 +333,14 @@ int i_create_table(char* table_name,char* s){//table_name:"student", s:"xh char(
 False:
     return F;
 }
-int i_create_index(char* table_name,char* s);
+int i_create_index(char* table_name,char* s){
+    struct TableRecord t=GetTable(table_name);safe2();
+    int status=CreateIndex(&t,s);safe2();
+    return status;
+False:
+    return F;
+}
+    
 
 int i_create_table_get_kh(char* s,int id){//Get the content in the (), s:"(xh char(10), ..) ;",id: buffer id, return 0 or F
     char* p=t[id];int i=0,l=strlen(s), count=1;
@@ -357,9 +364,9 @@ int i_create(char* s) {
         safe(i_create_table(t[2],t[3]));
     }
     else if(e(t[1],"index")) {
-        printf("!create index not implemented\n");
         w(s,2);w(s,3);w(s,4);w(s,5);safe3(i_get_kh(t[5],6),"expecting (column_name)");
-        printf(" INDEX NAME:%s\n TABLE NAME:%s\n COLUMN NAME:%s\n",t[2],t[4],t[6]);
+        //printf(" INDEX NAME:%s\n TABLE NAME:%s\n COLUMN NAME:%s\n",t[2],t[4],t[6]);
+        i_create_index(t[4],t[6]);
     }
     else {ErrorSyntax("create table/index");return  F;}
     return 0;
