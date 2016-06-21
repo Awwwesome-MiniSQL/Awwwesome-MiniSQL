@@ -57,7 +57,20 @@ int CreateTable(Table table)
 int RemoveTable(Table table)
 {
     char fileName[MAX_STRING_LENGTH];
+    int i;
+    char indexFileName[MAX_NAME_LENGTH];
     sprintf(fileName, "%s_record.db", table->name);
+    for (i = 0; i < table->attrNum; i++)
+    {
+        if (table->attributes[i].index >= 0)
+        {
+            // remove file
+            // @TODO invoke Catalog to drop index
+            sprintf(indexFileName, "%s_%s_index.db", table->name, table->attributes[i].name);
+            // @TODO update table's corresponding attribute index num
+            remove(indexFileName);
+        }
+    }
     remove(fileName);
     //@TODO we need Catalog manager to help us remove meta data
     return 0;
@@ -851,5 +864,30 @@ int RemoveIndexFile(char *tableName, char *attrName)
     // remove file
     // @TODO update table's corresponding attribute index num
     remove(fileName);
+    // update table's meta data
+    int i;
+    Table table;
+    char tableFileName[MAX_NAME_LENGTH];
+    sprintf(tableFileName, "%s_record.db", tableName);
+    table = ReadBlock(tableFileName, TABLE_META_OFFSET, sizeof(struct TableRecord));
+    if (NULL == table)
+    {
+        printf("[Error] No table named \"%s\"\n", tableName);
+        return 1;
+    }
+    for (i = 0; i < table->attrNum; i++)
+    {
+        if (strcmp(table->attributes[i].name, attrName) == 0)
+        {
+            table->attributes[i].index = -1;
+            WriteBlock(tableFileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
+            break;
+        }
+    }
+    if (i == table->attrNum)
+    {
+        printf("[Error] No such index\n");
+        return 1;
+    }
     return 0;
 }

@@ -592,7 +592,7 @@ void print_error(){
 
 int interpreter_more(char *s,char* history);
 
-static char *StripWhite(char *pszOrig);
+//static char *StripWhite(char *pszOrig);
 
 int i_exec(char* filename){
     /*Debug:*/printf("[trim_before]%s\n",filename);
@@ -646,7 +646,7 @@ int interpreter_more(char *s,char* history){
     strcat(history,s);
     if(in(";",s)) {
         ret=interpreter(trim(history));
-        history[0]=0; 
+        history[0]=0;
         return ret;
     }
     else return 0;
