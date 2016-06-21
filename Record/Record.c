@@ -395,7 +395,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
             count++;
             RemoveTupleIndex(table, tmpTuple);
             // delete current tuple from the table
-            if (j * table->recordsPerBlock + tmpRecordsNum + 1 != table->recordNum)  // the tuple to delete is not the last tuple, we move the last tuple to the empty position
+            if (j * table->recordsPerBlock + i + 1 != table->recordNum)  // the tuple to delete is not the last tuple, we move the last tuple to the empty position
             {
                 // @NOTE not going to truncate the file because it depends on systems
                 if (j < blockNum - 1)  // not in the last block
@@ -408,7 +408,8 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
                 }
                 lastTuple = lastBlock + (table->recordNum - 1) % table->recordsPerBlock * table->recordSize;
                 // make sure that the last tuple will not be deleted
-                while (1 == CheckTuple(lastTuple, table, intF, floatF, strF) && (table->recordNum - 1) * table->recordSize != j * BLOCK_SIZE + i * table->recordSize)  // while the last tuple is to delete and current tuple != the last one
+                while (1 == CheckTuple(lastTuple, table, intF, floatF, strF))
+                //&& table->recordNum - 1 != j * table->recordsPerBlock + i)  // while the last tuple is to delete and current tuple != the last one
                 {
                     count++;
                     RemoveTupleIndex(table, tmpTuple);
@@ -426,13 +427,16 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
                         }
                         free(curBlock);
 #endif
-                        printf("Query OK, %d row(s) affected\n\n", count);
+                        printf("Awwesome, Query OK, %d row(s) affected\n\n", count);
                         WriteBlock(fileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
                         return count;
                     }
                     if (0 == table->recordNum % table->recordsPerBlock)
                     {
-                        blockNum--;
+                        if (blockNum > 1)
+                        {
+                            blockNum--;
+                        }
 #ifdef NOBUFFER
                         free(lastBlock);
 #endif
