@@ -153,7 +153,11 @@ int main(void){
             free(pszLineRead);
             break;
         }
-        interpreter_more(pszCmdLine,storage_command);
+        if(in("exec",pszCmdLine)) {
+            FLAG_RECORD_INFO=0;
+            interpreter_more(pszCmdLine,storage_command);
+            FLAG_RECORD_INFO=1;
+        }else interpreter_more(pszCmdLine,storage_command);
     }
 
     return 0;

@@ -998,4 +998,3 @@ insert into student2 values(1080107996,'name7996',80);
 insert into student2 values(1080107997,'name7997',63.5);
 insert into student2 values(1080107998,'name7998',92.5);
 insert into student2 values(1080107999,'name7999',84.5);
-execfile instruction8.txt;
