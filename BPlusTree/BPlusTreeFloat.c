@@ -10,9 +10,6 @@ off_t AllocLeaf_float(BPlusTree tree, leaf_t_float *node)
     tree->meta.leafNum++;
     slot = tree->meta.slot;
     tree->meta.slot += BLOCK_SIZE;
-#ifndef DEBUG
-    printf("slot: %ld\n", slot);
-#endif
     return slot;
 }
 
@@ -72,9 +69,6 @@ int Insert_float(BPlusTree tree, my_key_t_float key, value_t value)
     // check whether in the tree first
     if (SearchKeyInLeaf_float(key, leaf))
     {
-#ifndef DEBUG
-        printf("The key(%f) is already in the table\n", key.key);
-#endif
         return 1;
     }
     // case 1: no need to split
@@ -249,13 +243,6 @@ void InsertIntoInternal_float(internal_t_float *internal, index_t_float index)
     }
     internal->children[i + 1] = index;
     internal->n++;
-#ifndef DEBUG
-    printf("After insert %d, parent: %ld\n", index.key.key, internal->parent);
-    for (i = 0; i < (int)internal->n; i++)
-    {
-        printf("internal->children[%d]: %d, %ld\n", i, internal->children[i].key.key, internal->children[i].child);
-    }
-#endif
 }
 
 
@@ -275,12 +262,6 @@ value_t Search_float(BPlusTree tree, my_key_t_float key)
             return leaf->children[i].value;
         }
     }
-#ifndef DEBUG
-    if (i == (int)leaf->n)
-    {
-        printf("The key (%f) is not in the BPlusTree\n", key.key);
-    }
-#endif
 #ifdef NOBUFFER
     free(leaf);
 #endif
@@ -449,9 +430,6 @@ off_t CreateNewRoot_float(BPlusTree tree, internal_t_float *root, internal_t_flo
     // update children of root
     root->children[0].key = tmpInternal->children[0].key;
     root->children[0].child = tmpInternalOffset;
-#ifndef DEBUG
-    printf("root->children[1]: %d, %ld\n", newInternal.children[1].key.key, newInternal.children[1].child);
-#endif
     // update root->n
     root->n = 1;
     WriteBlock(tree->path, root, newRootOffset, sizeof(internal_t_float));

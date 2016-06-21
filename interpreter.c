@@ -596,9 +596,13 @@ int interpreter_more(char *s,char* history);
 //static char *StripWhite(char *pszOrig);
 
 int i_exec(char* filename){
+#ifdef DEBUG
     /*Debug:*/printf("[trim_before]%s\n",filename);
+#endif
     trim(filename);
+#ifdef DEBUG
         /*Debug:*/printf("[trim_after]%s\n",filename);
+#endif
     FILE* fp=fopen(filename,"r");
     char line[9999],history[9999];
     if(fp==NULL) {sprintf(error_message,"File \"%s\" Not Found!",filename);TRUEFLAG=F;return F;}

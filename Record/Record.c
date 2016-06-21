@@ -185,7 +185,7 @@ off_t InsertTuple(Table table, char *tuple)
     insertPos = table->recordNum % table->recordsPerBlock * table->recordSize;
     if (!IsValidToInsert(table, tuple, offset + insertPos))
     {
-        printf("[ERROR] Cannot insert tuple because of constrains\n");
+        printf("[ERROR] Cannot insert tuple because of constraints\n");
         return 0;
     }
     if (table->recordNum % table->recordsPerBlock)
@@ -205,7 +205,10 @@ off_t InsertTuple(Table table, char *tuple)
     WriteBlock(fileName, table, TABLE_META_OFFSET, BLOCK_SIZE);
     InsertTupleIndex(table, tuple, offset + insertPos);
     // @NOTE output info
-    printf("\n\nQuery OK, 1 row affected\n\n");
+    if (FLAG_RECORD_INFO)
+    {
+        printf("\n\nQuery OK, 1 row affected\n\n");
+    }
     return offset + insertPos;
 }
 
