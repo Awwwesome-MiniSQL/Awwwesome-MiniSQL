@@ -759,3 +759,99 @@ off_t GetTuple(char *fileName, off_t tupleOffset, char **tuple, off_t recordsOff
     *tuple = (char *)(*curBlock)+ tupleOffset % BLOCK_SIZE;
     return recordsOffset;
 }
+
+int CreateIndex(Table table, char *attrName)
+{
+    int i;
+    for (i = 0; i < table->attrNum; i++)  // find the attribute
+    {
+        if (0 == strcmp(table->attributes[i].name, attrName))
+        {
+            if (!table->attributes[i].unique)  // not unique, return 1
+            {
+                printf("[Error] Could not create an index which is not a unique one\n");
+                return 1;
+            }
+            break;
+        }
+        if (i >= table->attrNum)  // could not find such attribute
+        {
+            printf("[Error] Attribute \"%s\" on table \"%s\" not found\n", attrName, table->name);
+            return 1;
+        }
+    }
+    // InitTree
+    char fileName[MAX_NAME_LENGTH];
+    FILE *fp;
+    struct tree_t tree;
+    sprintf(fileName, "%s_%s_index.db", table->name, table->attributes[i].name);
+    fp = fopen(fileName, "wb");
+    fclose(fp);
+    // @TODO ask Catalog to add the index
+    InitTree(&tree, fileName, table->attributes[table->primaryKey].type);
+    // do linear search to insert index
+    LinearAddIndices(table, i, &tree);
+    return 0;
+}
+
+int LinearAddIndices(Table table, int attrNum, BPlusTree tree)
+{
+    int i, j, blockNum, tmpRecordsNum, isLastBlockNotFull, count = 0;
+    off_t offset;
+    char *tmpTuple, *curBlock;
+    char fileName[MAX_STRING_LENGTH];
+    my_key_t_int intKey;
+    my_key_t_float floatKey;
+    my_key_t_str strKey;
+    int attrOffset[MAX_ATTRIBUTE_NUM];
+    ComputeAttrsOffset(table, attrOffset);
+    sprintf(fileName, "%s_record.db", table->name);
+    // compute number of blocks in table
+    isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
+    if (0 == table->recordNum)
+    {
+        return count;
+    }
+    blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
+    for (j = 1; j <= blockNum; j++)  // for each block
+    {
+        tmpRecordsNum = (j == blockNum && isLastBlockNotFull) ? isLastBlockNotFull : table->recordsPerBlock;  // number of records in current block
+        offset = TABLE_RECORD_OFFSET + (j - 1) * BLOCK_SIZE;
+        curBlock = (char *)ReadBlock(fileName, offset, BLOCK_SIZE);
+        for (i = 0; i < tmpRecordsNum; i++)  // for each record
+        {
+            tmpTuple = curBlock + i * table->recordSize;
+            //PrintTuple(table, tmpTuple, projection, attrMaxLen);
+            switch (table->attributes[attrNum].type)
+            {
+                case intType:
+                    intKey.key = *(int *)(tmpTuple + attrOffset[i]);
+                    InsertIndex(tree, intKey, offset);
+                    break;
+                case floatType:
+                    floatKey.key = *(float *)(tmpTuple + attrOffset[i]);
+                    InsertIndex(tree, floatKey, offset);
+                    break;
+                case stringType:
+                    strcpy(strKey.key, tmpTuple + attrOffset[i]);
+                    InsertIndex(tree, strKey, offset);
+                    break;
+            }
+            count++;
+        }
+#ifdef NOBUFFER
+        free(curBlock);
+#endif
+    }
+    return count;
+}
+
+int RemoveIndexFile(char *tableName, char *attrName)
+{
+    char fileName[MAX_NAME_LENGTH];
+    // @TODO invoke Catalog to drop index
+    sprintf(fileName, "%s_%s_index.db", tableName, attrName);
+    // remove file
+    remove(fileName);
+    return 0;
+}
