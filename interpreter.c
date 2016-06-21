@@ -65,7 +65,7 @@ char* i_get_dh(char* s,int id){//s:"a,b,c",id:buffer id, return=t[id]:"a",s:"b,c
     puts(test2);              //
 */
 char* i_get_and(char* s,int id){//s:"a<=10 and b>2 and c='hello'",id:buffer id, return=t[id]:"a < 1",s:"b>2 and c='hello'"
-char temp[9999];
+    char temp[9999];
     int i=0,l=strlen(s);char* p=t[id];
     if (!in("and",s)) {
         for(i=0;i<l;i++){
@@ -85,6 +85,7 @@ char temp[9999];
             if(s[i]=='<'||s[i]=='='||s[i]=='>'||s[i]=='!'){
                 *p++=' ';
                 *p++=s[i];
+                if(s[i+1]=='=') *p++=s[++i];
                 *p++=' ';
             }else{
                 *p++=s[i];
