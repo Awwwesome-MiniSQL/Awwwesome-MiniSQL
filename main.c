@@ -13,7 +13,7 @@
 #include "interpreter.c"
 
 char storage_command[9999];
-char FLAG_RECORD_INFO = 0;
+char FLAG_RECORD_INFO = 1;
 typedef int (*CmdProcFunc)(char*,char*);
 typedef struct{
     char         *pszCmd;

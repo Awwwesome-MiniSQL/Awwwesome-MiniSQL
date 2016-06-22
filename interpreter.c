@@ -417,6 +417,7 @@ int i_insert(char* s){
             memcpy(p,&x,4);
             p+=4;
         }else if(table.attributes[i].type==stringType){
+            trim(t[3]);
             if((t[3][0]=='\"'||t[3][0]=='\'')&&(t[3][strlen(t[3])-1]=='\"'||t[3][strlen(t[3])-1]=='\'')){
                 t[3][strlen(t[3])-1]=0;
                 if(strlen(t[3]+1)>=table.attributes[i].size) {
