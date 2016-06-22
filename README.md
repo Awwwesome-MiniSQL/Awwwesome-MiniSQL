@@ -4,10 +4,14 @@
 * readline library (for linux)
 * gcc 4.9+
 
-#### Prepare, Compile and Run
+#### Prepare, Download, Compile and Run
 ``` bash
 apt-get install -y ncurses-dev libreadline6-dev
-git clone http://10.214.224.77:81/zjuqsc/Awwwesome-MiniSQL.git
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt-get update
+sudo apt-get install gcc-4.9
+wget http://chenyuan.me/Awwwesome-MiniSQL.zip
+unzip Awwwesome-MiniSQL.zip
 cd Awwwesome-MiniSQL
 make
 ./MiniSQL
