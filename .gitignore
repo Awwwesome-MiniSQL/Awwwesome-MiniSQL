@@ -2,5 +2,4 @@
 *.o
 #*.txt
 *.db
-interpreter
-test
+MiniSQL

@@ -2,8 +2,8 @@ CC = gcc
 CFLAGS = -Wall -c
 LFLAGS = -Wall
 DEBUG = -g
-OBJS = BPlusTreeInt.o BPlusTreeFloat.o BPlusTreeStr.o BPlusTree.o RecordInt.o RecordFloat.o RecordStr.o Record.o test.o
-OUTPUT = -lreadline -lncurses -o test
+OBJS = BPlusTreeInt.o BPlusTreeFloat.o BPlusTreeStr.o BPlusTree.o RecordInt.o RecordFloat.o RecordStr.o Record.o main.o
+OUTPUT = -lreadline -lncurses -o MiniSQL
 
 all: test
 
@@ -34,8 +34,8 @@ RecordFloat.o: Record/Record.h Record/RecordFloat.c MiniSQL.h BPlusTree/BPlusTre
 RecordStr.o: Record/Record.h Record/RecordStr.c MiniSQL.h BPlusTree/BPlusTree.h BPlusTree/BPlusTreeStr.h
 	$(CC) $(CFLAGS) $(DEBUG) Record/RecordStr.c
 
-test.o: test.c MiniSQL.h BPlusTree/BPlusTree.h interpreter.c
-	$(CC) $(CFLAGS) $(DEBUG) test.c
+main.o: main.c MiniSQL.h BPlusTree/BPlusTree.h interpreter.c
+	$(CC) $(CFLAGS) $(DEBUG) main.c
 
 clean:
 	rm -f $(OBJS) test
