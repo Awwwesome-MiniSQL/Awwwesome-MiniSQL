@@ -86,4 +86,8 @@ int Move2NextChild_str(BPlusTree tree, leaf_t_str **leaf, int i);
 int Move2PreviousChild_str(BPlusTree tree, leaf_t_str **leaf, int i);
 
 int LinearAddIndices(Table table, int attrNum, BPlusTree tree);
+
+int FastInsertTuple(Table table, char *tuple);
+// @brief after FastInsert, maintain 
+int FastInsertDone(Table table);
 #endif
