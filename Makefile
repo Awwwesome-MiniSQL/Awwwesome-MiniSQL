@@ -3,7 +3,7 @@ CFLAGS = -Wall -c
 LFLAGS = -Wall
 DEBUG = -g
 OBJS = BPlusTreeInt.o BPlusTreeFloat.o BPlusTreeStr.o BPlusTree.o RecordInt.o RecordFloat.o RecordStr.o Record.o Catalog.o test.o
-OUTPUT = -o test
+OUTPUT = -lreadline -lncurses -o test
 
 all: test
 

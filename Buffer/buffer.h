@@ -1,7 +1,7 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "../Catalog/Catalog.h" 
+#include "../Catalog/Catalog.h"
 
 int log2(long num);
 int log2c(long num);
@@ -17,7 +17,7 @@ int log2c(long num);
 #define DATA_BIT (log2c(DATA_NUM))
 #define PAGE_BIT (1 + 1 + TAG_BIT + DATA_BIT)
 #define PAGE_SIZE (PAGE_BIT * TOTAL_BLOCK_NUM / 8)
-#define BUFFER_PAGE_SIZE (1 * 1024 * 1024)    // 1 MB for buffer_page
+#define BUFFER_PAGE_SIZE (1 * 1024 * 1024 * 4)    // 1 MB for buffer_page
 
 #define PAGE2_NUM (PAGE_SIZE / BLOCK_SIZE)
 // (v)   (page2_t)     (page_t)       (data)

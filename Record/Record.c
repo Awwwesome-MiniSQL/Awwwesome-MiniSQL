@@ -11,15 +11,7 @@
 
 int CreateTable(Table table)
 {
-    int i; 
-    struct AttributeRecord a;
-    printf("Function: CreateTable\n");
-    printf("TABLE:\n name:%s\n attrNum:%d\n primaryKey:%d\n recordSize:%d\n recordNum:%d\n recordsPerBlock:%d\n",table->name,table->attrNum,table->primaryKey,table->recordSize,table->recordNum,table->recordsPerBlock);
-    for(i=0;i<table->attrNum;i++)
-    {
-        a=table->attributes[i];
-        //printf(" Name:%s\n Type:%d\n Size:%d\n Unique:%d\n Index:%d\n",a.name,a.type,a.size,(int)a.unique,a.index);
-    }
+    int i;
     //@TODO we need Catalog manager here to check whether the table exists
     FILE *fp;
     char fileName[MAX_STRING_LENGTH];
@@ -46,7 +38,6 @@ int CreateTable(Table table)
     sprintf(fileName, "%s_record.db", table->name);
     fp = fopen(fileName, "wb");
     fclose(fp);
-    puts(fileName);
     WriteBlock(fileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
     // initialize a BPlusTree
     struct tree_t tree;
@@ -58,13 +49,28 @@ int CreateTable(Table table)
         // @TODO ask Catalog to add the index
         InitTree(&tree, fileName, table->attributes[table->primaryKey].type);
     }
+    // @NOTE output information
+    printf("\n\nCreated table \"%s\".\n\n", table->name);
     return 0;
 }
 
 int RemoveTable(Table table)
 {
     char fileName[MAX_STRING_LENGTH];
+    int i;
+    char indexFileName[MAX_NAME_LENGTH];
     sprintf(fileName, "%s_record.db", table->name);
+    for (i = 0; i < table->attrNum; i++)
+    {
+        if (table->attributes[i].index >= 0)
+        {
+            // remove file
+            // @TODO invoke Catalog to drop index
+            sprintf(indexFileName, "%s_%s_index.db", table->name, table->attributes[i].name);
+            // @TODO update table's corresponding attribute index num
+            remove(indexFileName);
+        }
+    }
     remove(fileName);
     //@TODO we need Catalog manager to help us remove meta data
     return 0;
@@ -179,7 +185,7 @@ off_t InsertTuple(Table table, char *tuple)
     insertPos = table->recordNum % table->recordsPerBlock * table->recordSize;
     if (!IsValidToInsert(table, tuple, offset + insertPos))
     {
-        printf("[ERROR] Cannot insert tuple because of constrains\n");
+        printf("[ERROR] Cannot insert tuple because of constraints\n");
         return 0;
     }
     if (table->recordNum % table->recordsPerBlock)
@@ -198,6 +204,11 @@ off_t InsertTuple(Table table, char *tuple)
     table->recordNum++;
     WriteBlock(fileName, table, TABLE_META_OFFSET, BLOCK_SIZE);
     InsertTupleIndex(table, tuple, offset + insertPos);
+    // @NOTE output info
+    if (FLAG_RECORD_INFO)
+    {
+        printf("\n\nQuery OK, 1 row affected\n\n");
+    }
     return offset + insertPos;
 }
 
@@ -272,9 +283,6 @@ int FloatAttrCmp(float attrValue, FloatFilter filter)
         case SMALLER: return attrValue < filter->src; break;
         case SMALLERE: return attrValue <= filter->src; break;
     }
-#ifdef DEBUG
-    printf("attrValue: %f, filter->src: %f\n", attrValue, filter->src);
-#endif
     return 0;
 }
 
@@ -387,7 +395,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
             count++;
             RemoveTupleIndex(table, tmpTuple);
             // delete current tuple from the table
-            if (j * table->recordsPerBlock + tmpRecordsNum + 1 != table->recordNum)  // the tuple to delete is not the last tuple, we move the last tuple to the empty position
+            if (j * table->recordsPerBlock + i + 1 < table->recordNum)  // the tuple to delete is not the last tuple, we move the last tuple to the empty position
             {
                 // @NOTE not going to truncate the file because it depends on systems
                 if (j < blockNum - 1)  // not in the last block
@@ -400,14 +408,14 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
                 }
                 lastTuple = lastBlock + (table->recordNum - 1) % table->recordsPerBlock * table->recordSize;
                 // make sure that the last tuple will not be deleted
-                while (1 == CheckTuple(lastTuple, table, intF, floatF, strF) && (table->recordNum - 1) % table->recordsPerBlock * table->recordSize != j * BLOCK_SIZE + i * table->recordSize)  // while the last tuple is to delete and current tuple != the last one
+                while (1 == CheckTuple(lastTuple, table, intF, floatF, strF) && table->recordNum - 1 > j * table->recordsPerBlock + i)  // while the last tuple is to delete and current tuple != the last one
                 {
                     count++;
                     RemoveTupleIndex(table, tmpTuple);
                     table->recordNum--;
                     isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
                     blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
-                    tmpRecordsNum = (j == blockNum - 1 && isLastBlockNotFull) ? isLastBlockNotFull : table->recordsPerBlock;  // number of records in current block
+                    tmpRecordsNum = (j >= blockNum - 1 && isLastBlockNotFull) ? isLastBlockNotFull : table->recordsPerBlock;  // number of records in current block
                     if (table->recordNum <= 1)  // only tmpTuple remains (which will be deleted, too), hence, the table is empty
                     {
                         table->recordNum = 0;
@@ -418,12 +426,18 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
                         }
                         free(curBlock);
 #endif
-                        printf("Query OK, %d row(s) affected\n\n", count);
+                        printf("Awwesome, Query OK, %d row(s) affected\n\n", count);
+                        WriteBlock(fileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
                         return count;
                     }
                     if (0 == table->recordNum % table->recordsPerBlock)
                     {
-                        blockNum--;
+                        /*
+                        if (blockNum > 1)
+                        {
+                            blockNum--;
+                        }
+                        */
 #ifdef NOBUFFER
                         free(lastBlock);
 #endif
@@ -431,24 +445,31 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
                     }
                     lastTuple = lastBlock + (table->recordNum - 1) % table->recordsPerBlock * table->recordSize;
                 }
-                memcpy(tmpTuple, lastTuple, table->recordSize);
-                UpdateTupleIndex(table, tmpTuple, offset + i * table->recordSize);
-                WriteBlock(fileName, curBlock, offset, BLOCK_SIZE);
+                if (table->recordNum - 1 > j * table->recordsPerBlock + i)
+                {
+                    memcpy(tmpTuple, lastTuple, table->recordSize);
+                    UpdateTupleIndex(table, tmpTuple, offset + i * table->recordSize);
+                    WriteBlock(fileName, curBlock, offset, BLOCK_SIZE);
 #ifdef NOBUFFER
-               if (lastBlock != curBlock)
-               {
-                   free(lastBlock);
-               }
+                    if (lastBlock != curBlock)
+                    {
+                        free(lastBlock);
+                    }
 #endif
+                }
             }
             table->recordNum--;
-            if (0 == table->recordNum)
+            if (0 == table->recordNum || j * table->recordsPerBlock + i + 1 >= table->recordNum)
             {
                 break;
             }
             isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
             blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
-            tmpRecordsNum = (j == blockNum - 1 && isLastBlockNotFull) ? isLastBlockNotFull : table->recordsPerBlock;  // number of records in current block
+            tmpRecordsNum = (j >= blockNum - 1 && isLastBlockNotFull) ? isLastBlockNotFull : table->recordsPerBlock;  // number of records in current block
+        }
+        if (0 == table->recordNum || j * table->recordsPerBlock + i + 1 >= table->recordNum)
+        {
+            break;
         }
 #ifdef NOBUFFER
         free(curBlock);
@@ -665,7 +686,7 @@ void InsertTupleIndex(Table table, char *tuple, off_t offset)
     ComputeAttrsOffset(table, attrOffset);
     for (i = 0; i < table->attrNum; i++)  // for each attribute
     {
-        if (table->attributes[i].index >= 0)  // if the attribute has an index
+        if (table->attributes[i].index >= 0 || table->primaryKey == i)  // if the attribute has an index
         {
             sprintf(tree.path, "%s_%s_index.db", table->name, table->attributes[i].name);
             GetTree(&tree);
@@ -762,4 +783,127 @@ off_t GetTuple(char *fileName, off_t tupleOffset, char **tuple, off_t recordsOff
     }
     *tuple = (char *)(*curBlock)+ tupleOffset % BLOCK_SIZE;
     return recordsOffset;
+}
+
+int CreateIndex(Table table, char *attrName)
+{
+    int i;
+    for (i = 0; i < table->attrNum; i++)  // find the attribute
+    {
+        if (0 == strcmp(table->attributes[i].name, attrName))
+        {
+            if (!table->attributes[i].unique)  // not unique, return 1
+            {
+                printf("[Error] Could not create an index which is not a unique one\n");
+                return 1;
+            }
+            break;
+        }
+        if (i >= table->attrNum)  // could not find such attribute
+        {
+            printf("[Error] Attribute \"%s\" on table \"%s\" not found\n", attrName, table->name);
+            return 1;
+        }
+    }
+    // InitTree
+    char fileName[MAX_NAME_LENGTH];
+    FILE *fp;
+    struct tree_t tree;
+    sprintf(fileName, "%s_%s_index.db", table->name, table->attributes[i].name);
+    fp = fopen(fileName, "wb");
+    fclose(fp);
+    // @TODO ask Catalog to add the index
+    InitTree(&tree, fileName, table->attributes[i].type);
+    // do linear search to insert index
+    LinearAddIndices(table, i, &tree);
+    return 0;
+}
+
+int LinearAddIndices(Table table, int attrNum, BPlusTree tree)
+{
+    int i, j, blockNum, tmpRecordsNum, isLastBlockNotFull, count = 0;
+    off_t offset;
+    char *tmpTuple, *curBlock;
+    char fileName[MAX_STRING_LENGTH];
+    my_key_t_int intKey;
+    my_key_t_float floatKey;
+    my_key_t_str strKey;
+    int attrOffset[MAX_ATTRIBUTE_NUM];
+    ComputeAttrsOffset(table, attrOffset);
+    sprintf(fileName, "%s_record.db", table->name);
+    // compute number of blocks in table
+    isLastBlockNotFull = table->recordNum % table->recordsPerBlock;
+    if (0 == table->recordNum)
+    {
+        return count;
+    }
+    blockNum = isLastBlockNotFull ? table->recordNum / table->recordsPerBlock + 1 : table->recordNum / table->recordsPerBlock;
+    for (j = 1; j <= blockNum; j++)  // for each block
+    {
+        tmpRecordsNum = (j == blockNum && isLastBlockNotFull) ? isLastBlockNotFull : table->recordsPerBlock;  // number of records in current block
+        offset = TABLE_RECORD_OFFSET + (j - 1) * BLOCK_SIZE;
+        curBlock = (char *)ReadBlock(fileName, offset, BLOCK_SIZE);
+        for (i = 0; i < tmpRecordsNum; i++)  // for each record
+        {
+            tmpTuple = curBlock + i * table->recordSize;
+            //PrintTuple(table, tmpTuple, projection, attrMaxLen);
+            switch (table->attributes[attrNum].type)
+            {
+                case intType:
+                    intKey.key = *(int *)(tmpTuple + attrOffset[attrNum]);
+                    InsertIndex(tree, intKey, offset);
+                    break;
+                case floatType:
+                    floatKey.key = *(float *)(tmpTuple + attrOffset[attrNum]);
+                    InsertIndex(tree, floatKey, offset);
+                    break;
+                case stringType:
+                    strcpy(strKey.key, tmpTuple + attrOffset[attrNum]);
+                    InsertIndex(tree, strKey, offset);
+                    break;
+            }
+            count++;
+        }
+#ifdef NOBUFFER
+        free(curBlock);
+#endif
+    }
+    printf("%d keys added\n", count);
+    return count;
+}
+
+int RemoveIndexFile(char *tableName, char *attrName)
+{
+    char fileName[MAX_NAME_LENGTH];
+    // @TODO invoke Catalog to drop index
+    sprintf(fileName, "%s_%s_index.db", tableName, attrName);
+    // remove file
+    // @TODO update table's corresponding attribute index num
+    remove(fileName);
+    // update table's meta data
+    int i;
+    Table table;
+    char tableFileName[MAX_NAME_LENGTH];
+    sprintf(tableFileName, "%s_record.db", tableName);
+    table = ReadBlock(tableFileName, TABLE_META_OFFSET, sizeof(struct TableRecord));
+    if (NULL == table)
+    {
+        printf("[Error] No table named \"%s\"\n", tableName);
+        return 1;
+    }
+    for (i = 0; i < table->attrNum; i++)
+    {
+        if (strcmp(table->attributes[i].name, attrName) == 0)
+        {
+            table->attributes[i].index = -1;
+            WriteBlock(tableFileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
+            break;
+        }
+    }
+    if (i == table->attrNum)
+    {
+        printf("[Error] No such index\n");
+        return 1;
+    }
+    return 0;
 }

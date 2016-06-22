@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include "MiniSQL.h"
 #include "Record/Record.h"
 #include "BPlusTree/BPlusTree.h"
@@ -9,49 +11,154 @@
 #include "BPlusTree/BPlusTreeStr.h"
 #include "Catalog/Catalog.h"
 #include "interpreter.c"
-#define DEBUG
-int main() {
-    //TEST:
-    //Not Implemented:Create Drop Index
-    char sql1[]="create index name_index on student (name)";
-    interpreter(sql1);
-    puts("========================");
 
-    char sql2[]="drop index name_index on student";
-    interpreter(sql2);
-    puts("========================");
+char storage_command[9999];
+char FLAG_RECORD_INFO = 0;
+typedef int (*CmdProcFunc)(char*,char*);
+typedef struct{
+    char         *pszCmd;
+    CmdProcFunc  fpCmd;
+}CMD_PROC;
 
-    //Create Table
-    char sql3[]="create table student (xh char(10) unique primary key,id int,name char(20),major char(30),GPA float);";
-    puts(sql3);
-    interpreter(sql3);//this is preparing for call insert and select
-    puts("========================");
+//命令表项宏，用于简化书写
+#define CMD_ENTRY(cmdStr, func)     {cmdStr, func}
+#define CMD_ENTRY_END               {NULL,   NULL}
 
-    //Insert
-    char sql4[]="insert into student values (\"3140105754\",1,\"Chen Yuan\",\"Biology\",3.55)";
-    interpreter(sql4);
-    puts("========================");
+//命令表
+static CMD_PROC gCmdMap[] = {
+    CMD_ENTRY("create",       interpreter_more),
+    CMD_ENTRY("select",        interpreter_more),
+    CMD_ENTRY("delete",        interpreter_more),
+    CMD_ENTRY("insert",        interpreter_more),
+    CMD_ENTRY_END
+};
+#define CMD_MAP_NUM     (sizeof(gCmdMap)/sizeof(CMD_PROC)) - 1/*End*/
 
-    //Select
-    //char sql5[]="select xh,GPA from student where GPA>4 and id<5 and xh='314' and GPA<5";
-    char sql5[]="select * from student";
-    interpreter(sql5);
-    puts("========================");
+//返回gCmdMap中的CmdStr列(必须为只读字符串)，以供CmdGenerator使用
+static char *GetCmdByIndex(unsigned int dwCmdIndex)
+{
+    if(dwCmdIndex >=  CMD_MAP_NUM)
+        return NULL;
+    return gCmdMap[dwCmdIndex].pszCmd;
+}
 
-    //Delete
-    char sql6[]="delete from student";// where GPA>4 and id<5 and xh='314' and GPA<5";
-    interpreter(sql6);
-    puts("========================");
-    //interpreter("select * from student");
-    sprintf(sql5, "select * from student");
-    printf("%s...\n", sql5);
-    interpreter(sql5);
 
-    //Drop
-    /*
-    char sql7[]="drop table student";
-    interpreter(sql7);
-    */
-    puts("========================");
+static const char * const pszCmdPrompt = "MiniSQL>>";
+
+//退出交互式调测器的命令(不区分大小写)
+static const char *pszQuitCmd[] = {"Quit"};
+static const unsigned char ucQuitCmdNum = sizeof(pszQuitCmd) / sizeof(pszQuitCmd[0]);
+static int IsUserQuitCmd(char *pszCmd)
+{
+    unsigned char ucQuitCmdIdx = 0;
+    for(; ucQuitCmdIdx < ucQuitCmdNum; ucQuitCmdIdx++)
+    {
+        if(!strcasecmp(pszCmd, pszQuitCmd[ucQuitCmdIdx]))
+            return 1;
+    }
+
+    return 0;
+}
+
+
+//剔除字符串首尾的空白字符(含空格)
+static char *StripWhite(char *pszOrig)
+{
+    if(NULL == pszOrig)
+        return "NUL";
+
+    char *pszStripHead = pszOrig;
+    while(isspace(*pszStripHead))
+        pszStripHead++;
+
+    if('\0' == *pszStripHead)
+        return pszStripHead;
+
+    char *pszStripTail = pszStripHead + strlen(pszStripHead) - 1;
+    while(pszStripTail > pszStripHead && isspace(*pszStripTail))
+        pszStripTail--;
+    *(++pszStripTail) = '\0';
+
+    return pszStripHead;
+}
+
+static char *pszLineRead = NULL;  //终端输入字符串
+static char *pszStripLine = NULL; //剔除前端空格的输入字符串
+char *ReadCmdLine()
+{
+     //若已分配命令行缓冲区，则将其释放
+    if(pszLineRead)
+    {
+        free(pszLineRead);
+        pszLineRead = NULL;
+    }
+    //读取用户输入的命令行
+    pszLineRead = readline(pszCmdPrompt);
+
+    //剔除命令行首尾的空白字符。若剔除后的命令不为空，则存入历史列表
+    pszStripLine = StripWhite(pszLineRead);
+    if(pszStripLine && *pszStripLine)
+        add_history(pszStripLine);
+
+    return pszStripLine;
+}
+
+static char *CmdGenerator(const char *pszText, int dwState)
+{
+    static int dwListIdx = 0, dwTextLen = 0;
+    if(!dwState)
+    {
+        dwListIdx = 0;
+        dwTextLen = strlen(pszText);
+    }
+
+    //当输入字符串与命令列表中某命令部分匹配时，返回该命令字符串
+    const char *pszName = NULL;
+    while((pszName = GetCmdByIndex(dwListIdx)))
+    {
+        dwListIdx++;
+
+        if(!strncmp (pszName, pszText, dwTextLen))
+            return strdup(pszName);
+    }
+
+    return NULL;
+}
+
+static char **CmdCompletion (const char *pszText, int dwStart, int dwEnd)
+{
+    //rl_attempted_completion_over = 1;
+    char **pMatches = NULL;
+    if(0 == dwStart)
+        pMatches = rl_completion_matches(pszText, CmdGenerator);
+
+    return pMatches;
+}
+
+//初始化Tab键能补齐的Command函数
+static void InitReadLine(void)
+{
+    rl_attempted_completion_function = CmdCompletion;
+}
+
+int main(void){
+    printf("      Welcome to MiniSQL Command!\n");
+    printf("      Author: 谢嘉豪, 张扬光, 陈源\n");
+    printf("      Press 'quit' or 'exit' to quit.\n\n");
+    InitReadLine();
+    while(1){
+        char *pszCmdLine = ReadCmdLine();
+        if(IsUserQuitCmd(pszCmdLine))
+        {
+            free(pszLineRead);
+            break;
+        }
+        if(in("exec",pszCmdLine)) {
+            FLAG_RECORD_INFO=0;
+            interpreter_more(pszCmdLine,storage_command);
+            FLAG_RECORD_INFO=1;
+        }else interpreter_more(pszCmdLine,storage_command);
+    }
+
     return 0;
 }

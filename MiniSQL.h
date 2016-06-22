@@ -31,4 +31,5 @@ struct TableRecord
     struct AttributeRecord attributes[MAX_ATTRIBUTE_NUM];
 };
 
+extern char FLAG_RECORD_INFO;
 #endif
