@@ -409,10 +409,10 @@ False:
 int i_insert(char* s){
     int i;
     w(s,1);
-    struct TableRecord table; static struct TableRecord b_table;
+    struct TableRecord table; //static struct TableRecord b_table;
     //if(1||FLAG_RECORD_INFO) {
         table = GetTable(t[1]);safe2();
-        b_table = table;
+    //    b_table = table;
     //}else{
    //     table = b_table;
     //}
