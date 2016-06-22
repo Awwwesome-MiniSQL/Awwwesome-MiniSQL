@@ -73,6 +73,7 @@ int RemoveTable(Table table)
     }
     remove(fileName);
     //@TODO we need Catalog manager to help us remove meta data
+    printf("Dropped table \"%s\"\n", table->name);
     return 0;
 }
 
