@@ -426,7 +426,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
                         }
                         free(curBlock);
 #endif
-                        printf("Awwesome, Query OK, %d row(s) affected\n\n", count);
+                        printf("Awwesome, Deletions OK, %d row(s) affected\n\n", count);
                         WriteBlock(fileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
                         return count;
                     }
@@ -475,7 +475,7 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
         free(curBlock);
 #endif
     }
-    printf("Query OK, %d row(s) affected.\n\n", count);
+    printf("Deletions OK, %d row(s) affected.\n\n", count);
     WriteBlock(fileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
     return count;
 }

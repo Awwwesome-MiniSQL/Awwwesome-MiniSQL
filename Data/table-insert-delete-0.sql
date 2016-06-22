@@ -1,4 +1,4 @@
-create table person (
+create table person ( 
 	height float,
 	pid int,
 	name char(32),
