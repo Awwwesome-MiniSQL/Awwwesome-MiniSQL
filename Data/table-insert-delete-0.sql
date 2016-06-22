@@ -1,5 +1,5 @@
 create table person ( 
-	height double,
+	height float,
 	pid int,
 	name char(32),
 	identity char(128) unique,
