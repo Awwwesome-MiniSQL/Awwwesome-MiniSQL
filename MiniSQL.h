@@ -4,6 +4,7 @@
 #define BLOCK_SIZE 4096 // 4 KB a block
 #define MAX_NAME_LENGTH 32
 #define MAX_STRING_LENGTH 256
+#define NOBUFFER
 #define DEBUG
 // three types of data, int, float, and string (the size of a string is between 0 and 255)
 enum DataType{intType, floatType, stringType};
