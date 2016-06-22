@@ -12,15 +12,20 @@ cd Awwwesome-MiniSQL
 make
 ./MiniSQL
 ```
-
+In MiniSQL, you can type:(<TAB> autocompletion for file is supported)
 ```
 exec Data/table-create-drop-0.sql;
 exec Data/table-create-drop-1.sql;
 exec Data/table-create-drop-2.sql;
 exec Data/table-insert-delete-0.sql;
-exec Data/;
-exec Data/;
-exec Data/;
+exec Data/table-insert-delete-1.sql;
+exec Data/table-select-0.sql;
+exec Data/table-select-1.sql;
+exec Data/test-1000.sql;
+exec Data/test-1w.sql;
+exec Data/test-10w.sql;
+```
+
 
 ### MiniSQL
 This MiniSQL project is maintained by [谢嘉豪](http://10.214.224.77:81/u/xjiajiahao), [陈源](http://10.214.224.77:81/u/chenyuan) and [张扬光](http://10.214.224.77:81/u/Yangguang.Zhang).
