@@ -22,7 +22,7 @@ int CreateTable(Table table)
     //WriteBlock(metaFileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
     //fclose(fp);
     table->recordNum = 0;
-    for (i = 0; i < table->recordNum; i++)
+    for (i = 0; i < table->attrNum; i++)
     {
         if (intType == table->attributes[i].type || floatType == table->attributes[i].type)
         {

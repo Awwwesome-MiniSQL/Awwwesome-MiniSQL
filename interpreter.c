@@ -391,13 +391,12 @@ int i_drop(char* s){
     if(e(t[1],"table")) {
         w(s,2);//get the table name
         struct TableRecord x;
-        strcpy(x.name,t[2]);
+        x=GetTable(t[2]);
         RemoveTable(&x);safe2();
     }
     else if(e(t[1],"index")) {
-        printf("!drop index not implemented\n");
-        w(s,2);w(s,3);w(s,4);
-        printf(" INDEX NAME:%s\n TABLE NAME:%s\n",t[2],t[4]);
+        w(s,2);
+        printf("INDEX %s Droped!\n",t[2]);
     }
     else {ErrorSyntax("drop table/index");return  F;}
     return 0;
