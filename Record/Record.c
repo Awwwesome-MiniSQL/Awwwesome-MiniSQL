@@ -943,6 +943,11 @@ int InsertExecStart(Table table, char *data)
         return 1;
     }
     fseek(globalTableFP, TABLE_RECORD_OFFSET + globalTable.recordNum / globalTable.recordsPerBlock * BLOCK_SIZE + globalTable.recordNum % globalTable.recordsPerBlock * globalTable.recordSize, SEEK_SET);
+    // allocate the 1st block, to avoid ReadBlock failure
+    if (0 == globalTable.recordNum)
+    {
+        fwrite(data, BLOCK_SIZE, 1, globalTableFP);
+    }
     InsertExecTuple(data);
     return 0;
 }
@@ -957,6 +962,7 @@ void InsertExecTuple(char *data)
         seekOffset += BLOCK_SIZE - globalTable.recordSize * globalTable.recordsPerBlock;
     }
     fseek(globalTableFP, seekOffset, SEEK_CUR);
+    fwrite(data, BLOCK_SIZE, 1, globalTableFP);
 }
 
 int InsertExecStop()
