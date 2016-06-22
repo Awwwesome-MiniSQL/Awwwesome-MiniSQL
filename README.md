@@ -5,20 +5,20 @@
 * gcc 4.9+
 
 ``` bash
-apt-get install ncurses-dev
-wget -c http://chenyuan.me/readline-master.tar.gz
-tar -zxvf readline-master.tar.gz
-cd readline-master
-./configure
-make && make install
+$ apt-get install ncurses-dev
+$ wget -c http://chenyuan.me/readline-master.tar.gz
+$ tar -zxvf readline-master.tar.gz
+$ cd readline-master
+$ ./configure
+$ make && make install
 ```
 #### Compile MiniSQL and Run
 ``` bash
-make
-./minnisql
+$ make
+$ ./Minnisql
 ```
 ### MiniSQL
-This MiniSQL project is maintained by xjiajiahao, chenyuan and Yangguang.Zhang.
+This MiniSQL project is maintained by [谢嘉豪](http://10.214.224.77:81/u/xjiajiahao), [陈源](http://10.214.224.77:81/u/chenyuan) and [张扬光](http://10.214.224.77:81/u/Yangguang.Zhang).
 
 #### Overview
 MiniSQL supports the following data types for an attribute:
