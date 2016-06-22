@@ -405,9 +405,15 @@ False:
 }
 
 int i_insert(char* s){
-    int i;
+    int i;static char FLAG_FASTINSERT=0;
     w(s,1);
-    struct TableRecord table=GetTable(t[1]);safe2();
+    struct TableRecord table; static struct TableRecord b_table;
+    if(FLAG_RECORD_INFO) {
+        table = GetTable(t[1]);safe2();
+        b_table = table;
+    }else{
+        table = b_table;
+    }
     if(strstr(s,"values")!=s) { ErrorSyntax("insert into table_name values"); return F;}
     i_get_kh(trim(s+strlen("values")),2);
     char* data = (char*)malloc(table.recordSize);char *p=data;
@@ -441,7 +447,15 @@ int i_insert(char* s){
             }
         }
     }
-    InsertTuple(&table,data);
+    if(FLAG_RECORD_INFO) {//normal situation
+        InsertTuple(&table,data);
+        FLAG_FASTINSERT=0;
+    }else{
+        if(!FLAG_FASTINSERT){//the first time insert in exec
+            FLAG_FASTINSERT=1;
+            InsertExecStart(&table,data);
+        }else InsertExecTuple(data);//aftwards no need table
+    }
     return 0;
 False:
     return F;
@@ -636,20 +650,28 @@ void i_quit(){
 }
 
 int interpreter(char* command){
-    char s[9999];
+    char s[9999];static char FLAG_FASTINSERT=0;
     strcpy(s,command);
     //if (in("name100",s)) __CY__DEBUG=1;
     if(strlen(s)>0&&s[strlen(s)-1]==';') s[strlen(s)-1]=0;
     w(s,0);
-    if(e(t[0],"create")) safe(i_create(s));
-    else if(e(t[0],"drop")) safe(i_drop(s));
-    else if(e(t[0],"insert")&&e(w(s,0),"into")) safe(i_insert(s));
-    else if(e(t[0],"select")) safe(i_select(s));
-    else if(e(t[0],"delete")) safe(i_delete(s));
-    else if(e(t[0],"exec")) safe(i_exec(s));
-    else if(e(t[0],"execfile")) safe(i_exec(s));
-    else if(e(t[0],"quit")||e(t[0],"exit")) i_quit();
-    else {ErrorSyntax("create/drop/select/insert/delete");goto False;}
+    if(e(t[0],"insert")&&e(w(s,0),"into")) {
+        safe(i_insert(s));
+        if(!FLAG_RECORD_INFO) FLAG_FASTINSERT=1;
+    }else{
+        if(FLAG_FASTINSERT){
+            FLAG_FASTINSERT=0;
+            InsertExecStop();
+        }
+        if(e(t[0],"drop")) safe(i_drop(s));
+        else if(e(t[0],"create")) safe(i_create(s));
+        else if(e(t[0],"select")) safe(i_select(s));
+        else if(e(t[0],"delete")) safe(i_delete(s));
+        else if(e(t[0],"exec")) safe(i_exec(s));
+        else if(e(t[0],"execfile")) safe(i_exec(s));
+        else if(e(t[0],"quit")||e(t[0],"exit")) i_quit();
+        else {ErrorSyntax("create/drop/select/insert/delete");goto False;}
+    }
     return 0;
 False:
 #ifdef DEBUG
