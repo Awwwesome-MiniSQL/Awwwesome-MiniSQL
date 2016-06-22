@@ -408,12 +408,12 @@ int i_insert(char* s){
     int i;static char FLAG_FASTINSERT=0;
     w(s,1);
     struct TableRecord table; static struct TableRecord b_table;
-    if(FLAG_RECORD_INFO) {
+    //if(1||FLAG_RECORD_INFO) {
         table = GetTable(t[1]);safe2();
         b_table = table;
-    }else{
-        table = b_table;
-    }
+    //}else{
+   //     table = b_table;
+    //}
     if(strstr(s,"values")!=s) { ErrorSyntax("insert into table_name values"); return F;}
     i_get_kh(trim(s+strlen("values")),2);
     char* data = (char*)malloc(table.recordSize);char *p=data;
