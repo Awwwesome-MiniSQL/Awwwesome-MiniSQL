@@ -7,6 +7,8 @@ int __CY__DEBUG=0;
 #include "BPlusTree/BPlusTree.h"
 int TRUEFLAG=1;
 int FLAG_INPUT_FINISH=1;
+int FLAG_FASTINSERT=0;
+int FLAG_FASTINSERT_BEGIN=0;
 const int F=-1;
 #define safe(function) do {if(function==F) goto False;if(TRUEFLAG==F) goto False;} while(0)
 #define safe2() do {if(TRUEFLAG==F) goto False;} while(0)
@@ -405,7 +407,7 @@ False:
 }
 
 int i_insert(char* s){
-    int i;static char FLAG_FASTINSERT=0;
+    int i;
     w(s,1);
     struct TableRecord table; static struct TableRecord b_table;
     //if(1||FLAG_RECORD_INFO) {
@@ -449,10 +451,10 @@ int i_insert(char* s){
     }
     if(FLAG_RECORD_INFO) {//normal situation
         InsertTuple(&table,data);
-        FLAG_FASTINSERT=0;
+        FLAG_FASTINSERT_BEGIN=0;
     }else{
-        if(!FLAG_FASTINSERT){//the first time insert in exec
-            FLAG_FASTINSERT=1;
+        if(!FLAG_FASTINSERT_BEGIN){//the first time insert in exec
+            FLAG_FASTINSERT_BEGIN=1;
             InsertExecStart(&table,data);
         }else InsertExecTuple(data);//aftwards no need table
     }
@@ -628,13 +630,7 @@ int interpreter_more(char *s,char* history);
 
 
 int i_exec(char* filename){
-#ifdef DEBUG
-    /*Debug:*/  //printf("[trim_before]%s\n",filename);
-#endif
     trim(filename);
-#ifdef DEBUG
-        /*Debug:*/ //printf("[trim_after]%s\n",filename);
-#endif
     FILE* fp=fopen(filename,"r");
     char line[9999],history[9999];
     if(fp==NULL) {sprintf(error_message,"File \"%s\" Not Found!",filename);TRUEFLAG=F;return F;}
@@ -650,7 +646,7 @@ void i_quit(){
 }
 
 int interpreter(char* command){
-    char s[9999];static char FLAG_FASTINSERT=0;
+    char s[9999];
     strcpy(s,command);
     //if (in("name100",s)) __CY__DEBUG=1;
     if(strlen(s)>0&&s[strlen(s)-1]==';') s[strlen(s)-1]=0;
@@ -662,6 +658,7 @@ int interpreter(char* command){
         if(FLAG_FASTINSERT){
             FLAG_FASTINSERT=0;
             InsertExecStop();
+            FLAG_FASTINSERT_BEGIN=0;
         }
         if(e(t[0],"drop")) safe(i_drop(s));
         else if(e(t[0],"create")) safe(i_create(s));
@@ -691,9 +688,10 @@ int interpreter_more(char *s,char* history){
     strcat(history,s);
     if(in(";",s)) {
         if(in("exec",history)) {
-            FLAG_RECORD_INFO=0;printf("[Debug]Disable output\n");
+            FLAG_RECORD_INFO=0;//printf("[Debug]Disable output\n");
+            printf("[RUN]%s\n",history);
             ret=interpreter(trim(history));
-            FLAG_RECORD_INFO=1;printf("[Debug]Enable output\n");
+            FLAG_RECORD_INFO=1;//printf("[Debug]Enable output\n");
         }else{
             ret=interpreter(trim(history));
         }
