@@ -799,11 +799,11 @@ int CreateIndex(Table table, char *attrName)
             }
             break;
         }
-        if (i >= table->attrNum)  // could not find such attribute
-        {
-            printf("[Error] Attribute \"%s\" on table \"%s\" not found\n", attrName, table->name);
-            return 1;
-        }
+    }
+    if (i >= table->attrNum)  // could not find such attribute
+    {
+        printf("[Error] Attribute \"%s\" on table \"%s\" not found\n", attrName, table->name);
+        return 1;
     }
     // InitTree
     char fileName[MAX_NAME_LENGTH];
