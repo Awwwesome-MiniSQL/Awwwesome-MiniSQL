@@ -525,7 +525,7 @@ void PrintTuple(Table table, char *tuple, int *projection, int *attrMaxLen)
         switch (table->attributes[projection[i]].type)
         {
             case intType: printf(" %*d |", attrMaxLen[i], *(int *)(tuple + attrOffset[projection[i]])); break;
-            case floatType: printf(" %*f |", attrMaxLen[i], *(float *)(tuple + attrOffset[projection[i]])); break;
+            case floatType: printf(" %*.1f |", attrMaxLen[i], *(float *)(tuple + attrOffset[projection[i]])); break;
             case stringType: printf(" %*s |", attrMaxLen[i], tuple + attrOffset[projection[i]]); break;
         }
         i++;
