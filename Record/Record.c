@@ -935,6 +935,7 @@ int InsertExecStart(Table table, char *data)
 {
     globalTable = *table;
     char fileName[MAX_NAME_LENGTH];
+    FILE *tmpFP = globalTableFP;
     sprintf(fileName, "%s_record.db", globalTable.name);
     globalTableFP = fopen(fileName, "rb+");
     if (NULL == globalTableFP)
@@ -954,15 +955,16 @@ int InsertExecStart(Table table, char *data)
 
 void InsertExecTuple(char *data)
 {
+    static tmpBlockNum = globalTable.recordNum % globalTable.recordsPerBlock;
     off_t seekOffset = globalTable.recordSize;  // next record's position
     fwrite(data, globalTable.recordSize, 1, globalTableFP);
     globalTable.recordNum++;
     if (globalTable.recordNum != 0 && 0 == globalTable.recordNum % globalTable.recordsPerBlock)  // move to the beginning next block
     {
         seekOffset += BLOCK_SIZE - globalTable.recordSize * globalTable.recordsPerBlock;
+        fwrite(data, BLOCK_SIZE, 1, globalTableFP);
     }
     fseek(globalTableFP, seekOffset, SEEK_CUR);
-    fwrite(data, BLOCK_SIZE, 1, globalTableFP);
 }
 
 int InsertExecStop()
