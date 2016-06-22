@@ -875,15 +875,15 @@ int LinearAddIndices(Table table, int attrNum, BPlusTree tree)
             {
                 case intType:
                     intKey.key = *(int *)(tmpTuple + attrOffset[attrNum]);
-                    InsertIndex(tree, intKey, offset);
+                    InsertIndex(tree, intKey, offset + i * table->recordSize);
                     break;
                 case floatType:
                     floatKey.key = *(float *)(tmpTuple + attrOffset[attrNum]);
-                    InsertIndex(tree, floatKey, offset);
+                    InsertIndex(tree, floatKey, offset + i * table->recordSize);
                     break;
                 case stringType:
                     strcpy(strKey.key, tmpTuple + attrOffset[attrNum]);
-                    InsertIndex(tree, strKey, offset);
+                    InsertIndex(tree, strKey, offset + i * table->recordSize);
                     break;
             }
             count++;
