@@ -35,6 +35,10 @@ int CreateTable(Table table)
         table->recordSize += table->attributes[i].size;
     }
     table->recordsPerBlock = BLOCK_SIZE / table->recordSize;
+    if (table->primaryKey >= 0)
+    {
+        table->attributes[table->primaryKey].index = 1;
+    }
     sprintf(fileName, "%s_record.db", table->name);
     fp = fopen(fileName, "wb");
     fclose(fp);
@@ -60,6 +64,14 @@ int RemoveTable(Table table)
     int i;
     char indexFileName[MAX_NAME_LENGTH];
     sprintf(fileName, "%s_record.db", table->name);
+    FILE *fp;
+    fp = fopen(fileName, "r");
+    if (NULL == fp)
+    {
+        printf("[Error] Table \"%s\" not found!\n", table->name);
+        return 1;
+    }
+    fclose(fp);
     for (i = 0; i < table->attrNum; i++)
     {
         if (table->attributes[i].index >= 0)
@@ -67,6 +79,12 @@ int RemoveTable(Table table)
             // remove file
             // @TODO invoke Catalog to drop index
             sprintf(indexFileName, "%s_%s_index.db", table->name, table->attributes[i].name);
+            fp = fopen(indexFileName, "r");
+            if (NULL == fp)
+            {
+                continue;
+            }
+            fclose(fp);
             // @TODO update table's corresponding attribute index num
             remove(indexFileName);
         }
