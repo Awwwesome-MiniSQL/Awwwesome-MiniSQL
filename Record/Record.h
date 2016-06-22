@@ -54,9 +54,10 @@ int CreateIndex(Table table, char *attrName);
 // @brief remove index file, return 0 if succeeded
 int RemoveIndexFile(char *tableName, char *attrName);
 
+int InsertExecStart(Table table, char *data);
 int InsertExecTuple(char *tuple);
 // @brief after FastInsert, maintain table meta data
-int InsertExecDone();
+int InsertExecStop();
 // =============================================================================
 // @brief try to insert the tuple in all related BPlusTree to test whether it can be inserted
 int IsValidToInsert(Table table, char *tuple, off_t offset);
