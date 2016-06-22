@@ -5,7 +5,7 @@
 #include "../BPlusTree/BPlusTree.h"
 #define DEBUG
 #define TABLE_META_OFFSET 0
-#define NUM_MAX_SIZE 10
+#define NUM_MAX_SIZE 12
 #define TABLE_RECORD_OFFSET TABLE_META_OFFSET + BLOCK_SIZE
 #define TABLE_META_DATA_FILENAME "table_meta.db"
 enum CmpCond{EQUAL, NOTEQUAL, LARGER, SMALLER, LARGERE, SMALLERE};
