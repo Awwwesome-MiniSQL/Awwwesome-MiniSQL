@@ -15,7 +15,7 @@ $ make && make install
 #### Compile MiniSQL and Run
 ``` bash
 $ make
-$ ./Minnisql
+$ ./MinniSQL
 ```
 ### MiniSQL
 This MiniSQL project is maintained by [谢嘉豪](http://10.214.224.77:81/u/xjiajiahao), [陈源](http://10.214.224.77:81/u/chenyuan) and [张扬光](http://10.214.224.77:81/u/Yangguang.Zhang).
