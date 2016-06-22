@@ -36,4 +36,5 @@ struct TableRecord
 extern char FLAG_RECORD_INFO;
 extern struct TableRecord globalTable;  // a table used to do InsertExec
 extern FILE *globalTableFP;  // global tabel file pointer
+extern char FLAG_FAST_INSERT;
 #endif
