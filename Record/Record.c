@@ -9,6 +9,9 @@
 #include "../BPlusTree/BPlusTreeFloat.h"
 #include "../BPlusTree/BPlusTreeStr.h"
 
+struct TableRecord globalTable;
+FILE *globalTableFP = NULL;
+
 int CreateTable(Table table)
 {
     int i;
