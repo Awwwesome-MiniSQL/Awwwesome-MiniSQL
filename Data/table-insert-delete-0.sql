@@ -1,8 +1,8 @@
-create table person ( 
+create table person (
 	height float,
 	pid int,
 	name char(32),
-	identity char(128) unique,
+	identity char(64) unique,
 	age int,
 	primary key(pid)
 );
