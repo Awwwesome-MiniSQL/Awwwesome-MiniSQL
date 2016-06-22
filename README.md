@@ -12,7 +12,7 @@ cd Awwwesome-MiniSQL
 make
 ./MiniSQL
 ```
-In MiniSQL, you can type:(<TAB> autocompletion for file is supported)
+In MiniSQL, you can type:
 ```
 exec Data/table-create-drop-0.sql;
 exec Data/table-create-drop-1.sql;
