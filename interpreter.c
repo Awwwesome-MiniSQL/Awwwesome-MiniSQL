@@ -393,7 +393,7 @@ int i_drop(char* s){
     if(e(t[1],"table")) {
         w(s,2);//get the table name
         struct TableRecord x;
-        x=GetTable(t[2]);
+        x=GetTable(t[2]);safe2();
         RemoveTable(&x);safe2();
     }
     else if(e(t[1],"index")) {
