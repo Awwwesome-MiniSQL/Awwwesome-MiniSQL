@@ -5,7 +5,7 @@
 * gcc 4.9+
 
 #### Prepare, Download, Compile and Run
-We need to install gcc-1.9 and readline to make our program.
+We need to install gcc-4.9 and readline to make our program.
 ``` bash
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt-get update
