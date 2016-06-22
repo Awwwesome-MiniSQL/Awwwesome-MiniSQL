@@ -30,6 +30,8 @@ exec Data/table-select-1.sql;
 exec Data/test-1000.sql;
 exec Data/test-1w.sql;
 exec Data/test-10w.sql;
+select * from person where age = 380;
+quit
 ```
 
 
