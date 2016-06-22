@@ -935,7 +935,6 @@ int InsertExecStart(Table table, char *data)
 {
     globalTable = *table;
     char fileName[MAX_NAME_LENGTH];
-    FILE *tmpFP = globalTableFP;
     sprintf(fileName, "%s_record.db", globalTable.name);
     globalTableFP = fopen(fileName, "rb+");
     if (NULL == globalTableFP)
@@ -943,28 +942,22 @@ int InsertExecStart(Table table, char *data)
         printf("[Error] Table \"%s\" not found.\n", table->name);
         return 1;
     }
-    fseek(globalTableFP, TABLE_RECORD_OFFSET + globalTable.recordNum / globalTable.recordsPerBlock * BLOCK_SIZE + globalTable.recordNum % globalTable.recordsPerBlock * globalTable.recordSize, SEEK_SET);
-    // allocate the 1st block, to avoid ReadBlock failure
-    if (0 == globalTable.recordNum)
-    {
-        fwrite(data, BLOCK_SIZE, 1, globalTableFP);
-    }
     InsertExecTuple(data);
     return 0;
 }
 
 void InsertExecTuple(char *data)
 {
-    static tmpBlockNum = globalTable.recordNum % globalTable.recordsPerBlock;
-    off_t seekOffset = globalTable.recordSize;  // next record's position
+    off_t seekOffset;  // next record's position
+    FILE *tmpFP = globalTableFP;
+    seekOffset = TABLE_RECORD_OFFSET + globalTable.recordNum / globalTable.recordsPerBlock * BLOCK_SIZE + globalTable.recordNum % globalTable.recordsPerBlock * globalTable.recordSize;
+    fseek(tmpFP, seekOffset, SEEK_SET);
+    if (0 == globalTable.recordNum % globalTable.recordsPerBlock)
+    {
+        fwrite(data, BLOCK_SIZE, 1, tmpFP);
+    }
     fwrite(data, globalTable.recordSize, 1, globalTableFP);
     globalTable.recordNum++;
-    if (globalTable.recordNum != 0 && 0 == globalTable.recordNum % globalTable.recordsPerBlock)  // move to the beginning next block
-    {
-        seekOffset += BLOCK_SIZE - globalTable.recordSize * globalTable.recordsPerBlock;
-        fwrite(data, BLOCK_SIZE, 1, globalTableFP);
-    }
-    fseek(globalTableFP, seekOffset, SEEK_CUR);
 }
 
 int InsertExecStop()
