@@ -816,7 +816,7 @@ int CreateIndex(Table table, char *attrName)
     {
         if (0 == strcmp(table->attributes[i].name, attrName))
         {
-            if (!table->attributes[i].unique || i != table->primaryKey)  // not unique, return 1
+            if (!table->attributes[i].unique && i != table->primaryKey)  // not unique, return 1
             {
                 printf("[Error] Could not create an index which is not a unique one\n");
                 return 1;
