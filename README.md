@@ -4,14 +4,24 @@
 * readline library (for linux)
 * gcc 4.9+
 
+#### Prepare, Compile and Run
 ``` bash
-$ apt-get install -y  ncurses-dev libreadline6-dev
+apt-get install -y ncurses-dev libreadline6-dev
+git clone http://10.214.224.77:81/zjuqsc/Awwwesome-MiniSQL.git
+cd Awwwesome-MiniSQL
+make
+./MiniSQL
 ```
-#### Compile MiniSQL and Run
-``` bash
-$ make
-$ ./MiniSQL
+
 ```
+exec Data/table-create-drop-0.sql;
+exec Data/table-create-drop-1.sql;
+exec Data/table-create-drop-2.sql;
+exec Data/table-insert-delete-0.sql;
+exec Data/;
+exec Data/;
+exec Data/;
+
 ### MiniSQL
 This MiniSQL project is maintained by [谢嘉豪](http://10.214.224.77:81/u/xjiajiahao), [陈源](http://10.214.224.77:81/u/chenyuan) and [张扬光](http://10.214.224.77:81/u/Yangguang.Zhang).
 
