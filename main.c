@@ -95,7 +95,7 @@ char *ReadCmdLine()
     //读取用户输入的命令行
     if(FLAG_INPUT_FINISH) pszLineRead = readline("MiniSQL>");
     else  pszLineRead = readline("      ->");
-    
+
     //剔除命令行首尾的空白字符。若剔除后的命令不为空，则存入历史列表
     pszStripLine = StripWhite(pszLineRead);
     if(pszStripLine && *pszStripLine)

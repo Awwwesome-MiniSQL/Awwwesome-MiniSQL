@@ -38,6 +38,7 @@ int CreateTable(Table table)
     if (table->primaryKey >= 0)
     {
         table->attributes[table->primaryKey].index = 1;
+        table->attributes[table->primaryKey].unique= 1;
     }
     sprintf(fileName, "%s_record.db", table->name);
     fp = fopen(fileName, "wb");
@@ -924,5 +925,43 @@ int RemoveIndexFile(char *tableName, char *attrName)
         printf("[Error] No such index\n");
         return 1;
     }
+    return 0;
+}
+
+int InsertExecStart(Table table, char *data)
+{
+    globalTable = *table;
+    char fileName[MAX_NAME_LENGTH];
+    sprintf(fileName, "%s_record.db", globalTable.name);
+    globalTableFP = fopen(fileName, "rb+");
+    if (NULL == globalTableFP)
+    {
+        printf("[Error] Table \"%s\" not found.\n", table->name);
+        return 1;
+    }
+    fseek(globalTableFP, TABLE_RECORD_OFFSET + globalTable.recordNum / globalTable.recordsPerBlock * BLOCK_SIZE + globalTable.recordNum % globalTable.recordsPerBlock * globalTable.recordSize, SEEK_SET);
+    InsertExecTuple(data);
+    return 0;
+}
+
+void InsertExecTuple(char *data)
+{
+    off_t seekOffset = globalTable.recordSize;  // next record's position
+    fwrite(data, globalTable.recordSize, 1, globalTableFP);
+    globalTable.recordNum++;
+    if (globalTable.recordNum != 0 && 0 == globalTable.recordNum % globalTable.recordsPerBlock)  // move to the beginning next block
+    {
+        seekOffset += BLOCK_SIZE - globalTable.recordSize * globalTable.recordsPerBlock;
+    }
+    fseek(globalTableFP, seekOffset, SEEK_CUR);
+}
+
+int InsertExecStop()
+{
+    char fileName[MAX_NAME_LENGTH];
+    sprintf(fileName, "%s_record.db", globalTable.name);
+    WriteBlock(fileName, &globalTable, TABLE_META_OFFSET, sizeof(struct TableRecord));
+    fclose(globalTableFP);
+    CreateIndex(&globalTable, globalTable.attributes[globalTable.primaryKey].name);
     return 0;
 }
