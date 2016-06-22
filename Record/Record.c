@@ -22,7 +22,7 @@ int CreateTable(Table table)
     //WriteBlock(metaFileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
     //fclose(fp);
     table->recordNum = 0;
-    for (i = 0; i < table->recordNum; i++)
+    for (i = 0; i < table->attrNum; i++)
     {
         if (intType == table->attributes[i].type || floatType == table->attributes[i].type)
         {
@@ -525,7 +525,7 @@ void PrintTuple(Table table, char *tuple, int *projection, int *attrMaxLen)
         switch (table->attributes[projection[i]].type)
         {
             case intType: printf(" %*d |", attrMaxLen[i], *(int *)(tuple + attrOffset[projection[i]])); break;
-            case floatType: printf(" %*f |", attrMaxLen[i], *(float *)(tuple + attrOffset[projection[i]])); break;
+            case floatType: printf(" %*.1f |", attrMaxLen[i], *(float *)(tuple + attrOffset[projection[i]])); break;
             case stringType: printf(" %*s |", attrMaxLen[i], tuple + attrOffset[projection[i]]); break;
         }
         i++;
