@@ -891,7 +891,10 @@ int LinearAddIndices(Table table, int attrNum, BPlusTree tree)
         free(curBlock);
 #endif
     }
-    printf("%d keys added\n", count);
+    if (FLAG_RECORD_INFO)
+    {
+        printf("%d keys added\n", count);
+    }
     return count;
 }
 

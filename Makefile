@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -c
 LFLAGS = -Wall
-DEBUG = -g
+#DEBUG = -g
 OBJS = BPlusTreeInt.o BPlusTreeFloat.o BPlusTreeStr.o BPlusTree.o RecordInt.o RecordFloat.o RecordStr.o Record.o main.o
 OUTPUT = -lreadline -lncurses -o MiniSQL
 
