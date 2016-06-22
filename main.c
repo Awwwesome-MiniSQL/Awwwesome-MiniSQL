@@ -154,11 +154,12 @@ int main(void){
             free(pszLineRead);
             break;
         }
-        if(in("exec",pszCmdLine)) {
-            FLAG_RECORD_INFO=0;
+        /*if(in("exec",pszCmdLine)) {
+            FLAG_RECORD_INFO=0;printf("[Debug]Disable output\n");
             interpreter_more(pszCmdLine,storage_command);
-            FLAG_RECORD_INFO=1;
-        }else interpreter_more(pszCmdLine,storage_command);
+            FLAG_RECORD_INFO=1;printf("[Debug]Enable output\n");
+        }else */
+        interpreter_more(pszCmdLine,storage_command);
     }
 
     return 0;

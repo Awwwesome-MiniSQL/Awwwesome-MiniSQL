@@ -690,7 +690,13 @@ int interpreter_more(char *s,char* history){
     if(e("quit",s)||e("exit",s)) i_quit();
     strcat(history,s);
     if(in(";",s)) {
-        ret=interpreter(trim(history));
+        if(in("exec",history)) {
+            FLAG_RECORD_INFO=0;printf("[Debug]Disable output\n");
+            ret=interpreter(trim(history));
+            FLAG_RECORD_INFO=1;printf("[Debug]Enable output\n");
+        }else{
+            ret=interpreter(trim(history));
+        }
         FLAG_INPUT_FINISH=1;
         history[0]=0;
         return ret;
