@@ -6,6 +6,7 @@ int __CY__DEBUG=0;
 #include "Record/Record.h"
 #include "BPlusTree/BPlusTree.h"
 int TRUEFLAG=1;
+int FLAG_INPUT_FINISH=1;
 const int F=-1;
 #define safe(function) do {if(function==F) goto False;if(TRUEFLAG==F) goto False;} while(0)
 #define safe2() do {if(TRUEFLAG==F) goto False;} while(0)
@@ -153,7 +154,7 @@ struct AttributeRecord GetAttribute(Table table,char* name,int* attrIndex){//nam
 }
 struct TableRecord GetTable(char* table_name){
     static char buffer_name[256]={0}; static struct TableRecord buffer_t;
-    if(strcmp(table_name,buffer_name)==0) return buffer_t;
+    if(0) if(strcmp(table_name,buffer_name)==0) return buffer_t;
  
      char fileName[256];struct TableRecord t;
      sprintf(fileName,  "%s_record.db", table_name);
@@ -165,6 +166,7 @@ struct TableRecord GetTable(char* table_name){
          return t;
      }
      memcpy(&t,table,sizeof(struct TableRecord));
+     strcpy(buffer_name,table_name);
      buffer_t = t;
      free(table);
      return t;
@@ -657,8 +659,11 @@ int interpreter_more(char *s,char* history){
     strcat(history,s);
     if(in(";",s)) {
         ret=interpreter(trim(history));
+        FLAG_INPUT_FINISH=1;
         history[0]=0;
         return ret;
+    }else{
+        FLAG_INPUT_FINISH=0;
+        return 0;
     }
-    else return 0;
 }

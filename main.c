@@ -43,7 +43,7 @@ static char *GetCmdByIndex(unsigned int dwCmdIndex)
 }
 
 
-static const char * const pszCmdPrompt = "MiniSQL>>";
+
 
 //退出交互式调测器的命令(不区分大小写)
 static const char *pszQuitCmd[] = {"Quit"};
@@ -93,8 +93,9 @@ char *ReadCmdLine()
         pszLineRead = NULL;
     }
     //读取用户输入的命令行
-    pszLineRead = readline(pszCmdPrompt);
-
+    if(FLAG_INPUT_FINISH) pszLineRead = readline("MiniSQL>");
+    else  pszLineRead = readline("      ->");
+    
     //剔除命令行首尾的空白字符。若剔除后的命令不为空，则存入历史列表
     pszStripLine = StripWhite(pszLineRead);
     if(pszStripLine && *pszStripLine)
