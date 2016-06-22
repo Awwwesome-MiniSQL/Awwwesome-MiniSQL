@@ -11,6 +11,7 @@
 
 struct TableRecord globalTable;
 FILE *globalTableFP = NULL;
+char FLAG_FAST_INSERT = 0;
 
 int CreateTable(Table table)
 {
@@ -891,7 +892,7 @@ int LinearAddIndices(Table table, int attrNum, BPlusTree tree)
         free(curBlock);
 #endif
     }
-    if (FLAG_RECORD_INFO)
+    if (!FLAG_FAST_INSERT)
     {
         printf("%d keys added\n", count);
     }
@@ -969,6 +970,8 @@ int InsertExecStop()
     sprintf(fileName, "%s_record.db", globalTable.name);
     WriteBlock(fileName, &globalTable, TABLE_META_OFFSET, sizeof(struct TableRecord));
     fclose(globalTableFP);
+    FLAG_FAST_INSERT = 1;
     CreateIndex(&globalTable, globalTable.attributes[globalTable.primaryKey].name);
+    FLAG_FAST_INSERT = 0;
     return 0;
 }
