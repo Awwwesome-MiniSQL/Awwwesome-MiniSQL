@@ -366,7 +366,17 @@ int i_create(char* s) {
         safe(i_create_table(t[2],t[3]));
     }
     else if(e(t[1],"index")) {
-        w(s,2);w(s,3);w(s,4);w(s,5);safe3(i_get_kh(t[5],6),"expecting (column_name)");
+        w(s,2);w(s,3); //w(s,4);w(s,5);safe3(i_get_kh(t[5],6),"expecting (column_name)");
+        int i,len=strlen(s);char* p=t[4];
+        for(i=0;i<len;i++){ 
+            if(s[i]!='(') *p++=s[i];
+            else{
+                *p=0;
+                safe3(i_get_kh(s+i,6),"expecting (column_name)");
+                break;
+            }
+        }
+        trim(t[4]);trim(t[6]);
         //printf(" INDEX NAME:%s\n TABLE NAME:%s\n COLUMN NAME:%s\n",t[2],t[4],t[6]);
         i_create_index(t[4],t[6]);
     }
