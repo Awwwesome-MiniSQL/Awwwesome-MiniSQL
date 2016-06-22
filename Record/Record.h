@@ -53,6 +53,10 @@ int GetTree(BPlusTree tree);
 int CreateIndex(Table table, char *attrName);
 // @brief remove index file, return 0 if succeeded
 int RemoveIndexFile(char *tableName, char *attrName);
+
+int InsertExecTuple(char *tuple);
+// @brief after FastInsert, maintain table meta data
+int InsertExecDone();
 // =============================================================================
 // @brief try to insert the tuple in all related BPlusTree to test whether it can be inserted
 int IsValidToInsert(Table table, char *tuple, off_t offset);
@@ -87,7 +91,4 @@ int Move2PreviousChild_str(BPlusTree tree, leaf_t_str **leaf, int i);
 
 int LinearAddIndices(Table table, int attrNum, BPlusTree tree);
 
-int FastInsertTuple(Table table, char *tuple);
-// @brief after FastInsert, maintain 
-int FastInsertDone(Table table);
 #endif
