@@ -50,7 +50,7 @@ int CreateTable(Table table)
         InitTree(&tree, fileName, table->attributes[table->primaryKey].type);
     }
     // @NOTE output information
-    printf("\n\nCreated table \"%s\".\n\n", table->name);
+    printf("\nCreated table \"%s\".\n", table->name);
     return 0;
 }
 
