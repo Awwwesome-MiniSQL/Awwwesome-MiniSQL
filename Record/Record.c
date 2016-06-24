@@ -823,6 +823,11 @@ int CreateIndex(Table table, char *attrName)
         printf("[Error] Attribute \"%s\" on table \"%s\" not found\n", attrName, table->name);
         return 1;
     }
+    // update table meta data
+    table->attributes[i].index = 1;
+    char tableFileName[MAX_NAME_LENGTH];
+    sprintf(tableFileName, "%s_record.db", table->name);
+    WriteBlock(tableFileName, table, TABLE_META_OFFSET, sizeof(struct TableRecord));
     // InitTree
     char fileName[MAX_NAME_LENGTH];
     FILE *fp;
