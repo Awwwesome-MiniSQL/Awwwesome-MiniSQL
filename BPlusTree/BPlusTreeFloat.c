@@ -587,7 +587,7 @@ int BorrowKey_float(BPlusTree tree, int borrowFromRight, leaf_t_float *leaf)
     sibling->n--;
     WriteBlock(tree->path, sibling, siblingOffset, sizeof(leaf_t_float));
 #ifdef NOBUFFER
-        free(sibling);
+    free(sibling);
 #endif
     return 1;  // succeeded
 }
@@ -742,7 +742,7 @@ int RemoveIndex_float(BPlusTree tree, internal_t_float *node, off_t offset, my_k
     }
     else   // no need to borrow or merge
     {
-            WriteBlock(tree->path, node, offset, sizeof(internal_t_float));
+        WriteBlock(tree->path, node, offset, sizeof(internal_t_float));
     }
 #ifdef NOBUFFER
     free(node);
@@ -793,7 +793,7 @@ int BorrowKeyFromInternal_float(BPlusTree tree, int borrowFromRight, internal_t_
     sibling->n--;
     WriteBlock(tree->path, sibling, siblingOffset, sizeof(internal_t_float));
 #ifdef NOBUFFER
-        free(sibling);
+    free(sibling);
 #endif
     return 1;
 }

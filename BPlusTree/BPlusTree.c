@@ -43,7 +43,8 @@ int IntKeyCmp(int A, int B)
 {
     return A - B;
 }
-int FloatKeyCmp(float  A, float B)
+
+int FloatKeyCmp(float A, float B)
 {
     if (A < B)
     {
@@ -74,8 +75,8 @@ void UnallocInternal(BPlusTree tree)
 void InitTree(BPlusTree tree, char *path, enum DataType type)
 {
     switch (type) {
-        case intType: InitTree_int(tree, path, type); break;
-        case floatType: InitTree_float(tree, path, type); break;
-        case stringType: InitTree_str(tree, path, type); break;
+    case intType: InitTree_int(tree, path, type); break;
+    case floatType: InitTree_float(tree, path, type); break;
+    case stringType: InitTree_str(tree, path, type); break;
     }
 }

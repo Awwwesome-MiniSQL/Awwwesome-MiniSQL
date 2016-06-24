@@ -31,7 +31,7 @@ int TraverseSearch_int(Table table, int *projection, BPlusTree tree, my_key_t_in
         if (0 == leaf->next)  // the end of the tree
         {
 #ifdef NOBUFFER
-                free(leaf);
+            free(leaf);
 #endif
             return count;
         }
@@ -98,46 +98,46 @@ int TraverseSearch_int(Table table, int *projection, BPlusTree tree, my_key_t_in
     }
     switch (cond)
     {
-        case LARGERE:
-        case LARGER:  // treat LARGERE and LARGER as LARGER because EQUAL has been dealt with already
-            while(i >= 0)
+    case LARGERE:
+    case LARGER:      // treat LARGERE and LARGER as LARGER because EQUAL has been dealt with already
+        while(i >= 0)
+        {
+            if (0 != CheckTuple(tuple, table, intF, floatF, strF))
             {
-                if (0 != CheckTuple(tuple, table, intF, floatF, strF))
-                {
-                    PrintTuple(table, tuple, projection, attrMaxLen);
-                    count++;
-                }
-                i = Move2NextChild_int(tree, &leaf, i);
-                if (i < 0)
-                {
-                    break;
-                }
-                tupleOffset = leaf->children[i].value;
-                recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, &curBlock);
+                PrintTuple(table, tuple, projection, attrMaxLen);
+                count++;
             }
-            break;
-        case SMALLER:
-        case SMALLERE: // treat SMALLERE and SMALLER as LARGER because EQUAL has been dealt with already
-            while(i >= 0)
+            i = Move2NextChild_int(tree, &leaf, i);
+            if (i < 0)
             {
-                if (0 != CheckTuple(tuple, table, intF, floatF, strF))
-                {
-                    PrintTuple(table, tuple, projection, attrMaxLen);
-                    count++;
-                }
-                i = Move2PreviousChild_int(tree, &leaf, i);
-                if (i < 0)
-                {
-                    break;
-                }
-                tupleOffset = leaf->children[i].value;
-                recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, &curBlock);
+                break;
             }
-            break;
-        case NOTEQUAL:
-            LinearScan(table, projection, intF, floatF, strF, attrMaxLen);
-            break;
-        default: break;
+            tupleOffset = leaf->children[i].value;
+            recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, &curBlock);
+        }
+        break;
+    case SMALLER:
+    case SMALLERE:     // treat SMALLERE and SMALLER as LARGER because EQUAL has been dealt with already
+        while(i >= 0)
+        {
+            if (0 != CheckTuple(tuple, table, intF, floatF, strF))
+            {
+                PrintTuple(table, tuple, projection, attrMaxLen);
+                count++;
+            }
+            i = Move2PreviousChild_int(tree, &leaf, i);
+            if (i < 0)
+            {
+                break;
+            }
+            tupleOffset = leaf->children[i].value;
+            recordsOffset = GetTuple(fileName, tupleOffset, &tuple, recordsOffset, &curBlock);
+        }
+        break;
+    case NOTEQUAL:
+        LinearScan(table, projection, intF, floatF, strF, attrMaxLen);
+        break;
+    default: break;
     }
 #ifdef NOBUFFER
     free(leaf);

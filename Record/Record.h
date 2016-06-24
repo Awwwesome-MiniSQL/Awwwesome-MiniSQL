@@ -8,7 +8,7 @@
 #define NUM_MAX_SIZE 12
 #define TABLE_RECORD_OFFSET TABLE_META_OFFSET + BLOCK_SIZE
 #define TABLE_META_DATA_FILENAME "table_meta.db"
-enum CmpCond{EQUAL, NOTEQUAL, LARGER, SMALLER, LARGERE, SMALLERE};
+enum CmpCond {EQUAL, NOTEQUAL, LARGER, SMALLER, LARGERE, SMALLERE};
 
 typedef struct IntFilterType *IntFilter;
 struct IntFilterType

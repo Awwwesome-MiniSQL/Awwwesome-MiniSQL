@@ -15,9 +15,9 @@
 char storage_command[9999];
 char FLAG_RECORD_INFO = 1;
 typedef int (*CmdProcFunc)(char*,char*);
-typedef struct{
+typedef struct {
     char         *pszCmd;
-    CmdProcFunc  fpCmd;
+    CmdProcFunc fpCmd;
 }CMD_PROC;
 
 //命令表项宏，用于简化书写
@@ -86,7 +86,7 @@ static char *pszLineRead = NULL;  //终端输入字符串
 static char *pszStripLine = NULL; //剔除前端空格的输入字符串
 char *ReadCmdLine()
 {
-     //若已分配命令行缓冲区，则将其释放
+    //若已分配命令行缓冲区，则将其释放
     if(pszLineRead)
     {
         free(pszLineRead);
@@ -147,7 +147,7 @@ int main(void){
     printf("      Author: 谢嘉豪, 张扬光, 陈源\n");
     printf("      Press 'quit' or 'exit' to quit.\n\n");
     InitReadLine();
-    while(1){
+    while(1) {
         char *pszCmdLine = ReadCmdLine();
         if(IsUserQuitCmd(pszCmdLine))
         {
@@ -158,7 +158,7 @@ int main(void){
             FLAG_RECORD_INFO=0;printf("[Debug]Disable output\n");
             interpreter_more(pszCmdLine,storage_command);
             FLAG_RECORD_INFO=1;printf("[Debug]Enable output\n");
-        }else */
+           }else */
         interpreter_more(pszCmdLine,storage_command);
         FLAG_RECORD_INFO=1;
         FLAG_INPUT_FINISH=1;

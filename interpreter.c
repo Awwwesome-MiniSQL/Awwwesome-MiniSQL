@@ -10,9 +10,9 @@ int FLAG_INPUT_FINISH=1;
 int FLAG_FASTINSERT=0;
 int FLAG_FASTINSERT_BEGIN=0;
 const int F=-1;
-#define safe(function) do {if(function==F) goto False;if(TRUEFLAG==F) goto False;} while(0)
-#define safe2() do {if(TRUEFLAG==F) goto False;} while(0)
-#define safe3(function,str) do {strcpy(error_message,str);if(function==NULL) goto False;if(TRUEFLAG==F) goto False;strcpy(error_message,"");} while(0)
+#define safe(function) do {if(function==F) goto False; if(TRUEFLAG==F) goto False; } while(0)
+#define safe2() do {if(TRUEFLAG==F) goto False; } while(0)
+#define safe3(function,str) do {strcpy(error_message,str); if(function==NULL) goto False; if(TRUEFLAG==F) goto False; strcpy(error_message,""); } while(0)
 #define print printf
 //If a function returns F, which means error occurs, all steps should be stop and return.
 
@@ -32,7 +32,7 @@ char* w(char* s,int id) { //w:getword, s:"create table classroom...", id:buffer 
     for(; i<l; i++) {
         if (s[i]==' ') break;
         *p++ = s[i];
-    }*p=0;
+    } *p=0;
     while(s[i]==' '&&i<l) i++;//skip second blanks
     strcpy(s,s+i);
     return t[id];
@@ -40,18 +40,18 @@ char* w(char* s,int id) { //w:getword, s:"create table classroom...", id:buffer 
     char test[]="  a  b   c";
     puts(w(test,0));          //a
     puts(test);            //b   c
-*/
+  */
 char* i_get_dh(char* s,int id){//s:"a,b,c",id:buffer id, return=t[id]:"a",s:"b,c"
     char temp[9999];
     if (!in(",",s)) {
         strcpy(t[id],s);
         s[0]=0;
     }else{
-        int i=0,l=strlen(s);char* p=t[id];
-        for(i=0;i<l;i++){
+        int i=0,l=strlen(s); char* p=t[id];
+        for(i=0; i<l; i++) {
             if(s[i]==',') break;
             *p++=s[i];
-        }*p=0;
+        } *p=0;
         strcpy(temp,s+i+1);
         strcpy(s,temp);
     }
@@ -63,13 +63,13 @@ char* i_get_dh(char* s,int id){//s:"a,b,c",id:buffer id, return=t[id]:"a",s:"b,c
     char test2[]="abbbc";
     puts(i_get_dh(test2,0));  //abbbc
     puts(test2);              //
-*/
+  */
 char* i_get_and(char* s,int id){//s:"a<=10 and b>2 and c='hello'",id:buffer id, return=t[id]:"a < 1",s:"b>2 and c='hello'"
     char temp[9999];
-    int i=0,l=strlen(s);char* p=t[id];
+    int i=0,l=strlen(s); char* p=t[id];
     if (!in("and",s)) {
-        for(i=0;i<l;i++){
-            if(s[i]=='<'||s[i]=='='||s[i]=='>'||s[i]=='!'){
+        for(i=0; i<l; i++) {
+            if(s[i]=='<'||s[i]=='='||s[i]=='>'||s[i]=='!') {
                 *p++=' ';
                 *p++=s[i];
                 if(s[i+1]=='=') *p++=s[++i];
@@ -77,12 +77,12 @@ char* i_get_and(char* s,int id){//s:"a<=10 and b>2 and c='hello'",id:buffer id, 
             }else{
                 *p++=s[i];
             }
-        }*p=0;
+        } *p=0;
         s[0]=0;
     }else{
-        for(i=0;i<l-3;i++){
+        for(i=0; i<l-3; i++) {
             if(strncmp(s+i," and",4)==0) break;
-            if(s[i]=='<'||s[i]=='='||s[i]=='>'||s[i]=='!'){
+            if(s[i]=='<'||s[i]=='='||s[i]=='>'||s[i]=='!') {
                 *p++=' ';
                 *p++=s[i];
                 if(s[i+1]=='=') *p++=s[++i];
@@ -90,7 +90,7 @@ char* i_get_and(char* s,int id){//s:"a<=10 and b>2 and c='hello'",id:buffer id, 
             }else{
                 *p++=s[i];
             }
-        }*p=0;
+        } *p=0;
         strcpy(temp,s+i+5);
         strcpy(s,temp);
     }
@@ -103,37 +103,37 @@ char* i_get_and(char* s,int id){//s:"a<=10 and b>2 and c='hello'",id:buffer id, 
     puts(test);             //c='hello'
     puts(i_get_and(test,0));   //c = 'hello'
     puts(test);             //
-*/
+  */
 char* i_get_kh(char* s,int id){//Get the content in the (), s:"(xh char(10), ..) ;",id: buffer id, return=t[id]:"xh char(10), .."
-     /*Debug*/if(__CY__DEBUG) {printf("Debug_i_get_kh:%s\n",s);}
-char temp[9999];
-    char* p=t[id];int i=0,l=strlen(s), count=1;
-    if(s[0]!='(') {return NULL;}
-    while(count>0&&i<l){
+    /*Debug*/ if(__CY__DEBUG) {printf("Debug_i_get_kh:%s\n",s); }
+    char temp[9999];
+    char* p=t[id]; int i=0,l=strlen(s), count=1;
+    if(s[0]!='(') {return NULL; }
+    while(count>0&&i<l) {
         i++;
         if(s[i]=='(') count++;
         else if(s[i]==')') count--;
         if(count>0) *p++=s[i];
-    }*p=0;
-    if(s[i]!=')')  {return NULL;}
+    } *p=0;
+    if(s[i]!=')')  {return NULL; }
     strcpy(temp,s+i+1);
     strcpy(s,temp);
-         /*Debug*/if(__CY__DEBUG) {printf("Debug_i_get_kh_After:%s\n",t[id]);}
+    /*Debug*/ if(__CY__DEBUG) {printf("Debug_i_get_kh_After:%s\n",t[id]); }
     return t[id];
 }
 /*TEST:
     char test[]="(abc)";
     puts(i_get_kh(test,0));
-*/
+ */
 char* trim(char* src){
-    char temp[9999];int i=0,j=strlen(src),k;
+    char temp[9999]; int i=0,j=strlen(src),k;
     strcpy(temp,src);
-    for(k=0;k<j;k++) if(temp[k]=='\n'||temp[k]=='\r'||temp[k]=='\t') temp[k]=' ';
+    for(k=0; k<j; k++) if(temp[k]=='\n'||temp[k]=='\r'||temp[k]=='\t') temp[k]=' ';
     j=strlen(temp)-1;
     while(temp[i]==' ') i++;
     /*while(j>0) {
         if(temp[j--]==';') { temp[j+1]=0; break; }
-    }*/
+       }*/
     j=strlen(temp)-1;
     while(temp[j]==' '||temp[j]==';') j--;
     temp[j+1]=0;
@@ -142,118 +142,118 @@ char* trim(char* src){
 }/*TEST:
     char test[]="  a, bb  ";
     puts(trim(test));
-*/
+  */
 
 
 //API
 struct AttributeRecord GetAttribute(Table table,char* name,int* attrIndex){//name: Attribute name, return: the struct AttributeRecord
-    int i;struct AttributeRecord x;
-    for(i=0;i<table->attrNum;i++)
+    int i; struct AttributeRecord x;
+    for(i=0; i<table->attrNum; i++)
         if(e(name,table->attributes[i].name)) break;
-    if(i==table->attrNum){sprintf(error_message,"column \"%s\" not found in the table",name);TRUEFLAG=F;return x;}
+    if(i==table->attrNum) {sprintf(error_message,"column \"%s\" not found in the table",name); TRUEFLAG=F; return x; }
     *attrIndex=i;
     return table->attributes[i];
 }
 struct TableRecord GetTable(char* table_name){
     static char buffer_name[256]={0}; static struct TableRecord buffer_t;
     if(0) if(strcmp(table_name,buffer_name)==0) return buffer_t;
- 
-     char fileName[256];struct TableRecord t;
-     sprintf(fileName,  "%s_record.db", table_name);
-     Table table = (Table)ReadBlock(fileName,0,sizeof(struct TableRecord));
-     if (NULL == table)
-     {
-         strcpy(error_message, "Table not found!");
-         TRUEFLAG = F;
-         return t;
-     }
-     memcpy(&t,table,sizeof(struct TableRecord));
-     strcpy(buffer_name,table_name);
-     buffer_t = t;
-     free(table);
-     return t;
- }
-    /*
-struct TableRecord __DEBUG__table;//this is for my module test, delete it when catalog finished
-struct TableRecord GetTable(char* table_name){//this is for my module test, delete it when catalog finished
-    struct TableRecord x;x.name[0]=0;
-    if(!e(table_name,__DEBUG__table.name)){
-        sprintf(error_message,"Table %s not found in database!",table_name);
-        TRUEFLAG=F;
-        return x;
-    }else return __DEBUG__table;
-}
 
-int CreateTable(Table x){
-    int i; struct AttributeRecord a;
-    print("Function: CreateTable\n");
-    print("TABLE:\n name:%s\n attrNum:%d\n primaryKey:%d\n recordSize:%d\n recordNum:%d\n recordsPerBlock:%d\n",x->name,x->attrNum,x->primaryKey,x->recordSize,x->recordNum,x->recordsPerBlock);
-    for(i=0;i<x->attrNum;i++){
-        a=x->attributes[i];
-        //print(" Name:%s\n Type:%d\n Size:%d\n Unique:%d\n Index:%d\n",a.name,a.type,a.size,(int)a.unique,a.index);
+    char fileName[256]; struct TableRecord t;
+    sprintf(fileName,  "%s_record.db", table_name);
+    Table table = (Table)ReadBlock(fileName,0,sizeof(struct TableRecord));
+    if (NULL == table)
+    {
+        strcpy(error_message, "Table not found!");
+        TRUEFLAG = F;
+        return t;
     }
-    __DEBUG__table=*x;
-    return 0;
+    memcpy(&t,table,sizeof(struct TableRecord));
+    strcpy(buffer_name,table_name);
+    buffer_t = t;
+    free(table);
+    return t;
 }
-int RemoveTable(Table x){
-    print("Function: RemoveTable\n");
-    print("TableName:%s\n",x->name);
-    return 0;
-}
-off_t InsertTuple(Table table,char* tuple){
-    int i,p=0;
-    print("TableName:%s\nData:\n",table->name);
-    for(i=0;i<table->attrNum;i++){
-        print("  %s:",table->attributes[i].name);
-        if(table->attributes[i].type==intType) {print("%d\n",*(int*)(tuple+p));p+=4;}
-        else if(table->attributes[i].type==floatType) {print("%f\n",*(float*)(tuple+p));p+=4;}
-        else if(table->attributes[i].type==stringType) {print("%s\n",tuple+p);p+=table->attributes[i].size;}
-    }
-    return 0;
-}
-int SearchTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter, int *projection){
-    int i;
-    print("\nFUNCTION: SearchTuples\nTableName:%s\n",table->name);
-    print("IntFilter:\n");
-    while(intFilter!=NULL) {
-        print("  Index %d, Cond %d, Value %d\n",intFilter->attrIndex,intFilter->cond,intFilter->src);
-        intFilter=intFilter->next;
-    }
-    print("FloatFilter:\n");
-    while(floatFilter!=NULL) {
-        print("  Index %d, Cond %d, Value %f\n",floatFilter->attrIndex,floatFilter->cond,floatFilter->src);
-        floatFilter=floatFilter->next;
-    }
-    print("StrFilter:\n");
-    while(strFilter!=NULL) {
-        print("  Index %d, Cond %d, Value %s\n",strFilter->attrIndex,strFilter->cond,strFilter->src);
-        strFilter=strFilter->next;
-    }
-    print("Projection:\n  ");
-    for(i=0;i<table->attrNum;i++) print("%d,",projection[i]);print("\n");
-    return 0;
-}
-int DeleteTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter){
-    int i;
-    print("\nFUNCTION: DeleteTuples\nTableName:%s\n",table->name);
-    print("IntFilter:\n");
-    while(intFilter!=NULL) {
-        print("  Index %d, Cond %d, Value %d\n",intFilter->attrIndex,intFilter->cond,intFilter->src);
-        intFilter=intFilter->next;
-    }
-    print("FloatFilter:\n");
-    while(floatFilter!=NULL) {
-        print("  Index %d, Cond %d, Value %f\n",floatFilter->attrIndex,floatFilter->cond,floatFilter->src);
-        floatFilter=floatFilter->next;
-    }
-    print("StrFilter:\n");
-    while(strFilter!=NULL) {
-        print("  Index %d, Cond %d, Value %s\n",strFilter->attrIndex,strFilter->cond,strFilter->src);
-        strFilter=strFilter->next;
-    }
-    return 0;
-}
-*/
+/*
+   struct TableRecord __DEBUG__table;//this is for my module test, delete it when catalog finished
+   struct TableRecord GetTable(char* table_name){//this is for my module test, delete it when catalog finished
+   struct TableRecord x;x.name[0]=0;
+   if(!e(table_name,__DEBUG__table.name)){
+    sprintf(error_message,"Table %s not found in database!",table_name);
+    TRUEFLAG=F;
+    return x;
+   }else return __DEBUG__table;
+   }
+
+   int CreateTable(Table x){
+   int i; struct AttributeRecord a;
+   print("Function: CreateTable\n");
+   print("TABLE:\n name:%s\n attrNum:%d\n primaryKey:%d\n recordSize:%d\n recordNum:%d\n recordsPerBlock:%d\n",x->name,x->attrNum,x->primaryKey,x->recordSize,x->recordNum,x->recordsPerBlock);
+   for(i=0;i<x->attrNum;i++){
+    a=x->attributes[i];
+    //print(" Name:%s\n Type:%d\n Size:%d\n Unique:%d\n Index:%d\n",a.name,a.type,a.size,(int)a.unique,a.index);
+   }
+   __DEBUG__table=*x;
+   return 0;
+   }
+   int RemoveTable(Table x){
+   print("Function: RemoveTable\n");
+   print("TableName:%s\n",x->name);
+   return 0;
+   }
+   off_t InsertTuple(Table table,char* tuple){
+   int i,p=0;
+   print("TableName:%s\nData:\n",table->name);
+   for(i=0;i<table->attrNum;i++){
+    print("  %s:",table->attributes[i].name);
+    if(table->attributes[i].type==intType) {print("%d\n",*(int*)(tuple+p));p+=4;}
+    else if(table->attributes[i].type==floatType) {print("%f\n",*(float*)(tuple+p));p+=4;}
+    else if(table->attributes[i].type==stringType) {print("%s\n",tuple+p);p+=table->attributes[i].size;}
+   }
+   return 0;
+   }
+   int SearchTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter, int *projection){
+   int i;
+   print("\nFUNCTION: SearchTuples\nTableName:%s\n",table->name);
+   print("IntFilter:\n");
+   while(intFilter!=NULL) {
+    print("  Index %d, Cond %d, Value %d\n",intFilter->attrIndex,intFilter->cond,intFilter->src);
+    intFilter=intFilter->next;
+   }
+   print("FloatFilter:\n");
+   while(floatFilter!=NULL) {
+    print("  Index %d, Cond %d, Value %f\n",floatFilter->attrIndex,floatFilter->cond,floatFilter->src);
+    floatFilter=floatFilter->next;
+   }
+   print("StrFilter:\n");
+   while(strFilter!=NULL) {
+    print("  Index %d, Cond %d, Value %s\n",strFilter->attrIndex,strFilter->cond,strFilter->src);
+    strFilter=strFilter->next;
+   }
+   print("Projection:\n  ");
+   for(i=0;i<table->attrNum;i++) print("%d,",projection[i]);print("\n");
+   return 0;
+   }
+   int DeleteTuples(Table table, IntFilter intFilter, FloatFilter floatFilter, StrFilter strFilter){
+   int i;
+   print("\nFUNCTION: DeleteTuples\nTableName:%s\n",table->name);
+   print("IntFilter:\n");
+   while(intFilter!=NULL) {
+    print("  Index %d, Cond %d, Value %d\n",intFilter->attrIndex,intFilter->cond,intFilter->src);
+    intFilter=intFilter->next;
+   }
+   print("FloatFilter:\n");
+   while(floatFilter!=NULL) {
+    print("  Index %d, Cond %d, Value %f\n",floatFilter->attrIndex,floatFilter->cond,floatFilter->src);
+    floatFilter=floatFilter->next;
+   }
+   print("StrFilter:\n");
+   while(strFilter!=NULL) {
+    print("  Index %d, Cond %d, Value %s\n",strFilter->attrIndex,strFilter->cond,strFilter->src);
+    strFilter=strFilter->next;
+   }
+   return 0;
+   }
+ */
 
 //Interpreter Function, i_...
 void ErrorSyntax(const char* s){
@@ -262,20 +262,20 @@ void ErrorSyntax(const char* s){
 }
 
 struct AttributeRecord i_create_table_attribute(char* s){//s:"xh char(10) unique"
-    struct AttributeRecord x;int size;
+    struct AttributeRecord x; int size;
     w(s,6);
     strcpy(x.name,t[6]);
     w(s,4);
-    if(e(t[4],"integer")||e(t[4],"int")){
+    if(e(t[4],"integer")||e(t[4],"int")) {
         x.type=intType;
 #ifdef DEBUG
-    //printf("t[0]: %s\nt[1]: %s\nt[2]: %s\nt[3]: %s\nt[4]: \"%s\"\n", t[0], t[1], t[2], t[3], t[4]);
+        //printf("t[0]: %s\nt[1]: %s\nt[2]: %s\nt[3]: %s\nt[4]: \"%s\"\n", t[0], t[1], t[2], t[3], t[4]);
 #endif
         size=4;
-    }else if(e(t[4],"float")){
+    }else if(e(t[4],"float")) {
         x.type=floatType;
         size=4;
-    }else if(sscanf(t[4],"char(%d)",&size)==1){
+    }else if(sscanf(t[4],"char(%d)",&size)==1) {
         x.type=stringType;
         size+=1;
     }else {
@@ -290,27 +290,27 @@ struct AttributeRecord i_create_table_attribute(char* s){//s:"xh char(10) unique
     char test[]="xh int unique";
     struct AttributeRecord a=i_create_table_attribute(test);safe2();
     printf(" Name:%s\n Type:%d\n Size:%d\n Unique:%d\n Index:%d\n",a.name,a.type,a.size,(int)a.unique,a.index);
-*/
+  */
 
 
 int i_create_table(char* table_name,char* s){//table_name:"student", s:"xh char(10) unique, name char(20)"
-    struct TableRecord ta;int i=0,j=0;
+    struct TableRecord ta; int i=0,j=0;
     strcpy(ta.name,table_name);
     ta.primaryKey=-1;
-    for(i=0;i<MAX_ATTRIBUTE_NUM;i++) ta.attributes[i].name[0]=0;
+    for(i=0; i<MAX_ATTRIBUTE_NUM; i++) ta.attributes[i].name[0]=0;
     i=0;
-    while(!e(s,"")){
+    while(!e(s,"")) {
         i_get_dh(s,5);//s.split(',')
-        if(!in("primary key",t[5])) {ta.attributes[i++]=i_create_table_attribute(t[5]);safe2();}//normal one
+        if(!in("primary key",t[5])) {ta.attributes[i++]=i_create_table_attribute(t[5]); safe2(); }//normal one
         else {
             trim(t[5]);
-            if(strstr(t[5],"primary key")==t[5]){//"primary key (xh)"
+            if(strstr(t[5],"primary key")==t[5]) {//"primary key (xh)"
                 //printf("[DEBUG]In primary key:%s",t[5]);
                 char key_name[MAX_NAME_LENGTH]={0};
                 if(in("(",t[5])) sscanf(trim(t[5]+strlen("primary key")),"(%[^)])",key_name);
                 else strcpy(key_name,trim(t[4]+strlen("primary key")));
-                for(j=0;j<MAX_ATTRIBUTE_NUM&&ta.attributes[j].name[0];j++){
-                    if(e(ta.attributes[j].name,key_name)){
+                for(j=0; j<MAX_ATTRIBUTE_NUM&&ta.attributes[j].name[0]; j++) {
+                    if(e(ta.attributes[j].name,key_name)) {
                         ta.primaryKey=j;
                         break;
                     }
@@ -321,14 +321,14 @@ int i_create_table(char* table_name,char* s){//table_name:"student", s:"xh char(
                     return F;
                 }
             }else{
-                ta.attributes[i++]=i_create_table_attribute(t[5]);safe2();
+                ta.attributes[i++]=i_create_table_attribute(t[5]); safe2();
                 ta.primaryKey=i-1;
             }
         }
     }
     ta.attrNum=i;
     ta.recordSize=0;
-    for(j=0;j<ta.attrNum;j++){
+    for(j=0; j<ta.attrNum; j++) {
         ta.recordSize+=ta.attributes[j].size;
     }
     ta.recordNum=0;
@@ -338,24 +338,24 @@ False:
     return F;
 }
 int i_create_index(char* table_name,char* s){
-    struct TableRecord t=GetTable(table_name);safe2();
-    int status=CreateIndex(&t,s);safe2();
+    struct TableRecord t=GetTable(table_name); safe2();
+    int status=CreateIndex(&t,s); safe2();
     return status;
 False:
     return F;
 }
-    
+
 
 int i_create_table_get_kh(char* s,int id){//Get the content in the (), s:"(xh char(10), ..) ;",id: buffer id, return 0 or F
-    char* p=t[id];int i=0,l=strlen(s), count=1;
-    if(s[0]!='(') {ErrorSyntax("create table table_name (");return F;}
-    while(count>0&&i<l){
+    char* p=t[id]; int i=0,l=strlen(s), count=1;
+    if(s[0]!='(') {ErrorSyntax("create table table_name ("); return F; }
+    while(count>0&&i<l) {
         i++;
         if(s[i]=='(') count++;
         else if(s[i]==')') count--;
         if(count>0) *p++=s[i];
     }
-    if(s[i]!=')')  {ErrorSyntax("create table table_name (...)");return F;}
+    if(s[i]!=')')  {ErrorSyntax("create table table_name (...)"); return F; }
     strcpy(s,s+i+1);
     return 0;
 }
@@ -368,9 +368,9 @@ int i_create(char* s) {
         safe(i_create_table(t[2],t[3]));
     }
     else if(e(t[1],"index")) {
-        w(s,2);w(s,3); //w(s,4);w(s,5);safe3(i_get_kh(t[5],6),"expecting (column_name)");
-        int i,len=strlen(s);char* p=t[4];
-        for(i=0;i<len;i++){ 
+        w(s,2); w(s,3); //w(s,4);w(s,5);safe3(i_get_kh(t[5],6),"expecting (column_name)");
+        int i,len=strlen(s); char* p=t[4];
+        for(i=0; i<len; i++) {
             if(s[i]!='(') *p++=s[i];
             else{
                 *p=0;
@@ -378,11 +378,11 @@ int i_create(char* s) {
                 break;
             }
         }
-        trim(t[4]);trim(t[6]);
+        trim(t[4]); trim(t[6]);
         //printf(" INDEX NAME:%s\n TABLE NAME:%s\n COLUMN NAME:%s\n",t[2],t[4],t[6]);
         i_create_index(t[4],t[6]);
     }
-    else {ErrorSyntax("create table/index");return  F;}
+    else {ErrorSyntax("create table/index"); return F; }
     return 0;
 False:
     return F;
@@ -393,14 +393,14 @@ int i_drop(char* s){
     if(e(t[1],"table")) {
         w(s,2);//get the table name
         struct TableRecord x;
-        x=GetTable(t[2]);safe2();
-        RemoveTable(&x);safe2();
+        x=GetTable(t[2]); safe2();
+        RemoveTable(&x); safe2();
     }
     else if(e(t[1],"index")) {
         w(s,2);
         printf("INDEX %s Droped!\n",t[2]);
     }
-    else {ErrorSyntax("drop table/index");return  F;}
+    else {ErrorSyntax("drop table/index"); return F; }
     return 0;
 False:
     return F;
@@ -411,31 +411,31 @@ int i_insert(char* s){
     w(s,1);
     struct TableRecord table; //static struct TableRecord b_table;
     //if(1||FLAG_RECORD_INFO) {
-        table = GetTable(t[1]);safe2();
+    table = GetTable(t[1]); safe2();
     //    b_table = table;
     //}else{
-   //     table = b_table;
+    //     table = b_table;
     //}
-    if(strstr(s,"values")!=s) { ErrorSyntax("insert into table_name values"); return F;}
+    if(strstr(s,"values")!=s) { ErrorSyntax("insert into table_name values"); return F; }
     i_get_kh(trim(s+strlen("values")),2);
-    char* data = (char*)malloc(table.recordSize);char *p=data;
+    char* data = (char*)malloc(table.recordSize); char *p=data;
     memset(data,0,table.recordSize);
-     /*Debug*/if(__CY__DEBUG) {printf("Debug:%s",t[2]);}
-    for(i=0;i<table.attrNum;i++){
+    /*Debug*/ if(__CY__DEBUG) {printf("Debug:%s",t[2]); }
+    for(i=0; i<table.attrNum; i++) {
         i_get_dh(t[2],3);
-        if(table.attributes[i].type==intType){
+        if(table.attributes[i].type==intType) {
             int x;
             sscanf(t[3],"%d",&x);
             memcpy(p,&x,4);
             p+=4;
-        }else if(table.attributes[i].type==floatType){
+        }else if(table.attributes[i].type==floatType) {
             float x;
             sscanf(t[3],"%f",&x);
             memcpy(p,&x,4);
             p+=4;
-        }else if(table.attributes[i].type==stringType){
+        }else if(table.attributes[i].type==stringType) {
             trim(t[3]);
-            if((t[3][0]=='\"'||t[3][0]=='\'')&&(t[3][strlen(t[3])-1]=='\"'||t[3][strlen(t[3])-1]=='\'')){
+            if((t[3][0]=='\"'||t[3][0]=='\'')&&(t[3][strlen(t[3])-1]=='\"'||t[3][strlen(t[3])-1]=='\'')) {
                 t[3][strlen(t[3])-1]=0;
                 if(strlen(t[3]+1)>=table.attributes[i].size) {
                     sprintf(error_message,"\"%s\" size too large, max length:%d",t[3]+1,table.attributes[i].size-1);
@@ -453,7 +453,7 @@ int i_insert(char* s){
         InsertTuple(&table,data);
         FLAG_FASTINSERT_BEGIN=0;
     }else{
-        if(!FLAG_FASTINSERT_BEGIN){//the first time insert in exec
+        if(!FLAG_FASTINSERT_BEGIN) {//the first time insert in exec
             FLAG_FASTINSERT_BEGIN=1;
             InsertExecStart(&table,data);
         }else InsertExecTuple(data);//aftwards no need table
@@ -462,55 +462,55 @@ int i_insert(char* s){
 False:
     return F;
 }/*TEST:
-//In the main:
+    //In the main:
     char x[]="create table student (xh char(10) unique primary key,id int,name char(20),major char(30),GPA float);";
     interpreter(x);//this is preparing for call insert
     char y[]="insert into student values (\"3140105754\",1,\"Chen Yuan\",\"Biology\",3.55)";
     safe(interpreter(y));
-//In this function:
+    //In this function:
     printf("%f",*(float*)(data+71-4));
-*/
+  */
 
 int i_select(char* s){
-    int projection[MAX_ATTRIBUTE_NUM],i,j,attrIndex;enum CmpCond cond;
-    struct IntFilterType memory_i[MAX_ATTRIBUTE_NUM];IntFilter pi=NULL,pi_now=NULL;int I_F=-1;//the chain memory from array, pi->chain first node, I_F chain now node index
-    struct FloatFilterType memory_f[MAX_ATTRIBUTE_NUM];FloatFilter pf=NULL,pf_now=NULL;int F_F=-1;
-    struct StrFilterType memory_s[MAX_ATTRIBUTE_NUM];StrFilter ps=NULL,ps_now=NULL;int S_F=-1;
+    int projection[MAX_ATTRIBUTE_NUM],i,j,attrIndex; enum CmpCond cond;
+    struct IntFilterType memory_i[MAX_ATTRIBUTE_NUM]; IntFilter pi=NULL,pi_now=NULL; int I_F=-1;//the chain memory from array, pi->chain first node, I_F chain now node index
+    struct FloatFilterType memory_f[MAX_ATTRIBUTE_NUM]; FloatFilter pf=NULL,pf_now=NULL; int F_F=-1;
+    struct StrFilterType memory_s[MAX_ATTRIBUTE_NUM]; StrFilter ps=NULL,ps_now=NULL; int S_F=-1;
 
-    for(i=0;i<MAX_ATTRIBUTE_NUM;i++) projection[i]=-1;
+    for(i=0; i<MAX_ATTRIBUTE_NUM; i++) projection[i]=-1;
     w(s,1);
-    if(!e("from",w(s,2))){ErrorSyntax("select ... from");return F;}
+    if(!e("from",w(s,2))) {ErrorSyntax("select ... from"); return F; }
     w(s,2);
-    struct TableRecord table=GetTable(t[2]);safe2();
-    if(e("*",t[1])){
-        for(i=0;i<table.attrNum;i++) projection[i]=i;
+    struct TableRecord table=GetTable(t[2]); safe2();
+    if(e("*",t[1])) {
+        for(i=0; i<table.attrNum; i++) projection[i]=i;
     }else{
         i=0;
-        while(!e(i_get_dh(t[1],3),"")){
-            for(j=0;j<table.attrNum;j++)
+        while(!e(i_get_dh(t[1],3),"")) {
+            for(j=0; j<table.attrNum; j++)
                 if(e(t[3],table.attributes[j].name)) break;
-            if(j==table.attrNum){sprintf(error_message,"column \"%s\" not found in the table",t[3]);TRUEFLAG=F;return F;}
+            if(j==table.attrNum) {sprintf(error_message,"column \"%s\" not found in the table",t[3]); TRUEFLAG=F; return F; }
             projection[i++]=j;
         }
     }
 
 
 
-    if(!e(s,"")){
-        if(!e(w(s,4),"where")) {ErrorSyntax("select ... from ... where");return F;}
-        while(!e(i_get_and(s,4),"")){
-            w(t[4],5);w(t[4],6);strcpy(t[7],t[4]);//w(t[4],7);if(!e(t[4],""))  {sprintf(error_message,"Unexpected %s",t[4]);return F;}
-            struct AttributeRecord a=GetAttribute(&table,t[5],&attrIndex);safe2();
+    if(!e(s,"")) {
+        if(!e(w(s,4),"where")) {ErrorSyntax("select ... from ... where"); return F; }
+        while(!e(i_get_and(s,4),"")) {
+            w(t[4],5); w(t[4],6); strcpy(t[7],t[4]);//w(t[4],7);if(!e(t[4],""))  {sprintf(error_message,"Unexpected %s",t[4]);return F;}
+            struct AttributeRecord a=GetAttribute(&table,t[5],&attrIndex); safe2();
             if(e(t[6],"=")) cond=EQUAL;
             else if(e(t[6],"!=")) cond=NOTEQUAL;
             else if(e(t[6],">")) cond=LARGER;
             else if(e(t[6],"<")) cond=SMALLER;
             else if(e(t[6],">=")) cond=LARGERE;
             else if(e(t[6],"<=")) cond=SMALLERE;
-            else {sprintf(error_message,"Unexpected %s",t[6]);return F;}
+            else {sprintf(error_message,"Unexpected %s",t[6]); return F; }
             if(a.type==intType) {
                 I_F++;
-                if(!sscanf(t[7],"%d",&memory_i[I_F].src)) {sprintf(error_message,"Unexpected %s, missing integer",t[7]);return F;}
+                if(!sscanf(t[7],"%d",&memory_i[I_F].src)) {sprintf(error_message,"Unexpected %s, missing integer",t[7]); return F; }
                 memory_i[I_F].attrIndex=attrIndex;
                 memory_i[I_F].cond=cond;
                 memory_i[I_F].next=NULL;
@@ -522,7 +522,7 @@ int i_select(char* s){
                 }
             }else if(a.type==floatType) {
                 F_F++;
-                if(!sscanf(t[7],"%f",&memory_f[F_F].src)) {sprintf(error_message,"Unexpected %s, missing float",t[7]);return F;}
+                if(!sscanf(t[7],"%f",&memory_f[F_F].src)) {sprintf(error_message,"Unexpected %s, missing float",t[7]); return F; }
                 memory_f[F_F].attrIndex=attrIndex;
                 memory_f[F_F].cond=cond;
                 memory_f[F_F].next=NULL;
@@ -534,7 +534,7 @@ int i_select(char* s){
                 }
             }else if(a.type==stringType) {
                 S_F++;
-                if((t[7][0]=='\"'&&t[7][strlen(t[7])-1]=='\"')||(t[7][0]=='\''&&t[7][strlen(t[7])-1]=='\'')){
+                if((t[7][0]=='\"'&&t[7][strlen(t[7])-1]=='\"')||(t[7][0]=='\''&&t[7][strlen(t[7])-1]=='\'')) {
                     t[7][strlen(t[7])-1]=0;
                     strcpy(memory_s[S_F].src,t[7]+1);
                     memory_s[S_F].attrIndex=attrIndex;
@@ -546,7 +546,7 @@ int i_select(char* s){
                         ps_now->next=&memory_s[S_F];
                         ps_now=&memory_s[S_F];
                     }
-                }else {sprintf(error_message,"Unexpected %s, missing \"...\"",t[7]);return F;}
+                }else {sprintf(error_message,"Unexpected %s, missing \"...\"",t[7]); return F; }
             }
         }
     }
@@ -556,28 +556,28 @@ False:
 }
 
 int i_delete(char* s){
-    int attrIndex;enum CmpCond cond;
-    struct IntFilterType memory_i[MAX_ATTRIBUTE_NUM];IntFilter pi=NULL,pi_now=NULL;int I_F=-1;//the chain memory from array, pi->chain first node, I_F chain now node index
-    struct FloatFilterType memory_f[MAX_ATTRIBUTE_NUM];FloatFilter pf=NULL,pf_now=NULL;int F_F=-1;
-    struct StrFilterType memory_s[MAX_ATTRIBUTE_NUM];StrFilter ps=NULL,ps_now=NULL;int S_F=-1;
-    if(!e("from",w(s,1))){ErrorSyntax("delete from");return F;}
+    int attrIndex; enum CmpCond cond;
+    struct IntFilterType memory_i[MAX_ATTRIBUTE_NUM]; IntFilter pi=NULL,pi_now=NULL; int I_F=-1;//the chain memory from array, pi->chain first node, I_F chain now node index
+    struct FloatFilterType memory_f[MAX_ATTRIBUTE_NUM]; FloatFilter pf=NULL,pf_now=NULL; int F_F=-1;
+    struct StrFilterType memory_s[MAX_ATTRIBUTE_NUM]; StrFilter ps=NULL,ps_now=NULL; int S_F=-1;
+    if(!e("from",w(s,1))) {ErrorSyntax("delete from"); return F; }
     w(s,2);
-    struct TableRecord table=GetTable(t[2]);safe2();
-    if(!e(s,"")){
-        if(!e(w(s,4),"where")) {ErrorSyntax("delete from ... where");return F;}
-        while(!e(i_get_and(s,4),"")){
-            w(t[4],5);w(t[4],6);strcpy(t[7],t[4]);//w(t[4],7);if(!e(t[4],""))  {sprintf(error_message,"Unexpected %s",t[4]);return F;}
-            struct AttributeRecord a=GetAttribute(&table,t[5],&attrIndex);safe2();
+    struct TableRecord table=GetTable(t[2]); safe2();
+    if(!e(s,"")) {
+        if(!e(w(s,4),"where")) {ErrorSyntax("delete from ... where"); return F; }
+        while(!e(i_get_and(s,4),"")) {
+            w(t[4],5); w(t[4],6); strcpy(t[7],t[4]);//w(t[4],7);if(!e(t[4],""))  {sprintf(error_message,"Unexpected %s",t[4]);return F;}
+            struct AttributeRecord a=GetAttribute(&table,t[5],&attrIndex); safe2();
             if(e(t[6],"=")) cond=EQUAL;
             else if(e(t[6],"!=")) cond=NOTEQUAL;
             else if(e(t[6],">")) cond=LARGER;
             else if(e(t[6],"<")) cond=SMALLER;
             else if(e(t[6],">=")) cond=LARGERE;
             else if(e(t[6],"<=")) cond=SMALLERE;
-            else {sprintf(error_message,"Unexpected %s",t[6]);return F;}
+            else {sprintf(error_message,"Unexpected %s",t[6]); return F; }
             if(a.type==intType) {
                 I_F++;
-                if(!sscanf(t[7],"%d",&memory_i[I_F].src)) {sprintf(error_message,"Unexpected %s, missing integer",t[7]);return F;}
+                if(!sscanf(t[7],"%d",&memory_i[I_F].src)) {sprintf(error_message,"Unexpected %s, missing integer",t[7]); return F; }
                 memory_i[I_F].attrIndex=attrIndex;
                 memory_i[I_F].cond=cond;
                 memory_i[I_F].next=NULL;
@@ -589,7 +589,7 @@ int i_delete(char* s){
                 }
             }else if(a.type==floatType) {
                 F_F++;
-                if(!sscanf(t[7],"%f",&memory_f[F_F].src)) {sprintf(error_message,"Unexpected %s, missing float",t[7]);return F;}
+                if(!sscanf(t[7],"%f",&memory_f[F_F].src)) {sprintf(error_message,"Unexpected %s, missing float",t[7]); return F; }
                 memory_f[F_F].attrIndex=attrIndex;
                 memory_f[F_F].cond=cond;
                 memory_f[F_F].next=NULL;
@@ -601,7 +601,7 @@ int i_delete(char* s){
                 }
             }else if(a.type==stringType) {
                 S_F++;
-                if((t[7][0]=='\"'&&t[7][strlen(t[7])-1]=='\"')||(t[7][0]=='\''&&t[7][strlen(t[7])-1]=='\'')){
+                if((t[7][0]=='\"'&&t[7][strlen(t[7])-1]=='\"')||(t[7][0]=='\''&&t[7][strlen(t[7])-1]=='\'')) {
                     t[7][strlen(t[7])-1]=0;
                     strcpy(memory_s[S_F].src,t[7]+1);
                     memory_s[S_F].attrIndex=attrIndex;
@@ -613,7 +613,7 @@ int i_delete(char* s){
                         ps_now->next=&memory_s[S_F];
                         ps_now=&memory_s[S_F];
                     }
-                }else {sprintf(error_message,"Unexpected %s, missing \"...\"",t[7]);return F;}
+                }else {sprintf(error_message,"Unexpected %s, missing \"...\"",t[7]); return F; }
             }
         }
     }
@@ -633,7 +633,7 @@ int i_exec(char* filename){
     trim(filename);
     FILE* fp=fopen(filename,"r");
     char line[9999],history[9999];
-    if(fp==NULL) {sprintf(error_message,"File \"%s\" Not Found!",filename);TRUEFLAG=F;return F;}
+    if(fp==NULL) {sprintf(error_message,"File \"%s\" Not Found!",filename); TRUEFLAG=F; return F; }
     while(fgets(line,9999,fp)!=NULL) {
         interpreter_more(line,history);
     }
@@ -655,7 +655,7 @@ int interpreter(char* command){
         safe(i_insert(s));
         if(!FLAG_RECORD_INFO) FLAG_FASTINSERT=1;
     }else{
-        if(FLAG_FASTINSERT){
+        if(FLAG_FASTINSERT) {
             FLAG_FASTINSERT=0;
             InsertExecStop();
             FLAG_FASTINSERT_BEGIN=0;
@@ -667,7 +667,7 @@ int interpreter(char* command){
         else if(e(t[0],"exec")) safe(i_exec(s));
         else if(e(t[0],"execfile")) safe(i_exec(s));
         else if(e(t[0],"quit")||e(t[0],"exit")) i_quit();
-        else {ErrorSyntax("create/drop/select/insert/delete");goto False;}
+        else {ErrorSyntax("create/drop/select/insert/delete"); goto False; }
     }
     return 0;
 False:

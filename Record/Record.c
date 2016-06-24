@@ -250,27 +250,27 @@ int IsValidToInsert(Table table, char *tuple, off_t offset)
             // generate filter and search the unique attribute value
             switch (table->attributes[i].type)
             {
-                case intType:
-                    intF.attrIndex = i;
-                    intF.cond = EQUAL;
-                    intF.src = *(int *)(tuple + attrOffset[i]);
-                    intF.next = NULL;
-                    found = SearchUniqueAttr(table, &intF, NULL, NULL);
-                    break;
-                case floatType:
-                    floatF.attrIndex = i;
-                    floatF.cond = EQUAL;
-                    floatF.src = *(float *)(tuple + attrOffset[i]);
-                    floatF.next = NULL;
-                    found = SearchUniqueAttr(table, NULL, &floatF, NULL);
-                    break;
-                case stringType:
-                    strF.attrIndex = i;
-                    strF.cond = EQUAL;
-                    strcpy(strF.src, tuple + attrOffset[i]);
-                    strF.next = NULL;
-                    found = SearchUniqueAttr(table, NULL, NULL, &strF);
-                    break;
+            case intType:
+                intF.attrIndex = i;
+                intF.cond = EQUAL;
+                intF.src = *(int *)(tuple + attrOffset[i]);
+                intF.next = NULL;
+                found = SearchUniqueAttr(table, &intF, NULL, NULL);
+                break;
+            case floatType:
+                floatF.attrIndex = i;
+                floatF.cond = EQUAL;
+                floatF.src = *(float *)(tuple + attrOffset[i]);
+                floatF.next = NULL;
+                found = SearchUniqueAttr(table, NULL, &floatF, NULL);
+                break;
+            case stringType:
+                strF.attrIndex = i;
+                strF.cond = EQUAL;
+                strcpy(strF.src, tuple + attrOffset[i]);
+                strF.next = NULL;
+                found = SearchUniqueAttr(table, NULL, NULL, &strF);
+                break;
             }
             if (found)
             {
@@ -286,12 +286,12 @@ int IntAttrCmp(int attrValue, IntFilter filter)
 {
     switch (filter->cond)
     {
-        case EQUAL: return attrValue == filter->src; break;
-        case NOTEQUAL: return attrValue != filter->src; break;
-        case LARGER: return attrValue > filter->src; break;
-        case LARGERE: return attrValue >= filter->src; break;
-        case SMALLER: return attrValue < filter->src; break;
-        case SMALLERE: return attrValue <= filter->src; break;
+    case EQUAL: return attrValue == filter->src; break;
+    case NOTEQUAL: return attrValue != filter->src; break;
+    case LARGER: return attrValue > filter->src; break;
+    case LARGERE: return attrValue >= filter->src; break;
+    case SMALLER: return attrValue < filter->src; break;
+    case SMALLERE: return attrValue <= filter->src; break;
     }
     return 0;
 }
@@ -300,12 +300,12 @@ int FloatAttrCmp(float attrValue, FloatFilter filter)
 {
     switch (filter->cond)
     {
-        case EQUAL: return attrValue == filter->src; break;
-        case NOTEQUAL: return attrValue != filter->src; break;
-        case LARGER: return attrValue > filter->src; break;
-        case LARGERE: return attrValue >= filter->src; break;
-        case SMALLER: return attrValue < filter->src; break;
-        case SMALLERE: return attrValue <= filter->src; break;
+    case EQUAL: return attrValue == filter->src; break;
+    case NOTEQUAL: return attrValue != filter->src; break;
+    case LARGER: return attrValue > filter->src; break;
+    case LARGERE: return attrValue >= filter->src; break;
+    case SMALLER: return attrValue < filter->src; break;
+    case SMALLERE: return attrValue <= filter->src; break;
     }
     return 0;
 }
@@ -316,12 +316,12 @@ int StrAttrCmp(char *attrValue, StrFilter filter)
     result = strcmp(attrValue, filter->src);
     switch (filter->cond)
     {
-        case EQUAL: return result == 0; break;
-        case NOTEQUAL: return result != 0; break;
-        case LARGER: return result > 0; break;
-        case LARGERE: return result >= 0; break;
-        case SMALLER: return result < 0; break;
-        case SMALLERE: return result <= 0; break;
+    case EQUAL: return result == 0; break;
+    case NOTEQUAL: return result != 0; break;
+    case LARGER: return result > 0; break;
+    case LARGERE: return result >= 0; break;
+    case SMALLER: return result < 0; break;
+    case SMALLERE: return result <= 0; break;
     }
     return 0;
 }
@@ -456,12 +456,6 @@ int DeleteTuples(Table table, IntFilter intF, FloatFilter floatF, StrFilter strF
                     }
                     if (0 == table->recordNum % table->recordsPerBlock)
                     {
-                        /*
-                        if (blockNum > 1)
-                        {
-                            blockNum--;
-                        }
-                        */
 #ifdef NOBUFFER
                         free(lastBlock);
 #endif
@@ -529,9 +523,9 @@ void PrintTuple(Table table, char *tuple, int *projection, int *attrMaxLen)
     {
         switch (table->attributes[projection[i]].type)
         {
-            case intType: printf(" %*d |", attrMaxLen[i], *(int *)(tuple + attrOffset[projection[i]])); break;
-            case floatType: printf(" %*.1f |", attrMaxLen[i], *(float *)(tuple + attrOffset[projection[i]])); break;
-            case stringType: printf(" %*s |", attrMaxLen[i], tuple + attrOffset[projection[i]]); break;
+        case intType: printf(" %*d |", attrMaxLen[i], *(int *)(tuple + attrOffset[projection[i]])); break;
+        case floatType: printf(" %*.1f |", attrMaxLen[i], *(float *)(tuple + attrOffset[projection[i]])); break;
+        case stringType: printf(" %*s |", attrMaxLen[i], tuple + attrOffset[projection[i]]); break;
         }
         i++;
     }
@@ -717,18 +711,18 @@ void InsertTupleIndex(Table table, char *tuple, off_t offset)
             // generate filter and search the unique attribute value
             switch (table->attributes[i].type)
             {
-                case intType:
-                    intKey.key = *(int *)(tuple + attrOffset[i]);
-                    InsertIndex(&tree, intKey, offset);
-                    break;
-                case floatType:
-                    floatKey.key = *(float *)(tuple + attrOffset[i]);
-                    InsertIndex(&tree, floatKey, offset);
-                    break;
-                case stringType:
-                    strcpy(strKey.key, tuple + attrOffset[i]);
-                    InsertIndex(&tree, strKey, offset);
-                    break;
+            case intType:
+                intKey.key = *(int *)(tuple + attrOffset[i]);
+                InsertIndex(&tree, intKey, offset);
+                break;
+            case floatType:
+                floatKey.key = *(float *)(tuple + attrOffset[i]);
+                InsertIndex(&tree, floatKey, offset);
+                break;
+            case stringType:
+                strcpy(strKey.key, tuple + attrOffset[i]);
+                InsertIndex(&tree, strKey, offset);
+                break;
             }
         }
     }
@@ -751,18 +745,18 @@ void RemoveTupleIndex(Table table, char *tuple)
             // generate filter and search the unique attribute value
             switch (table->attributes[i].type)
             {
-                case intType:
-                    intKey.key = *(int *)(tuple + attrOffset[i]);
-                    RemoveIndex(&tree, intKey);
-                    break;
-                case floatType:
-                    floatKey.key = *(float *)(tuple + attrOffset[i]);
-                    RemoveIndex(&tree, floatKey);
-                    break;
-                case stringType:
-                    strcpy(strKey.key, tuple + attrOffset[i]);
-                    RemoveIndex(&tree, strKey);
-                    break;
+            case intType:
+                intKey.key = *(int *)(tuple + attrOffset[i]);
+                RemoveIndex(&tree, intKey);
+                break;
+            case floatType:
+                floatKey.key = *(float *)(tuple + attrOffset[i]);
+                RemoveIndex(&tree, floatKey);
+                break;
+            case stringType:
+                strcpy(strKey.key, tuple + attrOffset[i]);
+                RemoveIndex(&tree, strKey);
+                break;
             }
         }
     }
@@ -873,18 +867,18 @@ int LinearAddIndices(Table table, int attrNum, BPlusTree tree)
             //PrintTuple(table, tmpTuple, projection, attrMaxLen);
             switch (table->attributes[attrNum].type)
             {
-                case intType:
-                    intKey.key = *(int *)(tmpTuple + attrOffset[attrNum]);
-                    InsertIndex(tree, intKey, offset + i * table->recordSize);
-                    break;
-                case floatType:
-                    floatKey.key = *(float *)(tmpTuple + attrOffset[attrNum]);
-                    InsertIndex(tree, floatKey, offset + i * table->recordSize);
-                    break;
-                case stringType:
-                    strcpy(strKey.key, tmpTuple + attrOffset[attrNum]);
-                    InsertIndex(tree, strKey, offset + i * table->recordSize);
-                    break;
+            case intType:
+                intKey.key = *(int *)(tmpTuple + attrOffset[attrNum]);
+                InsertIndex(tree, intKey, offset + i * table->recordSize);
+                break;
+            case floatType:
+                floatKey.key = *(float *)(tmpTuple + attrOffset[attrNum]);
+                InsertIndex(tree, floatKey, offset + i * table->recordSize);
+                break;
+            case stringType:
+                strcpy(strKey.key, tmpTuple + attrOffset[attrNum]);
+                InsertIndex(tree, strKey, offset + i * table->recordSize);
+                break;
             }
             count++;
         }
