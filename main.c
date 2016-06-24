@@ -161,7 +161,7 @@ int main(void){
            }else */
         interpreter_more(pszCmdLine,storage_command);
         FLAG_RECORD_INFO=1;
-        FLAG_INPUT_FINISH=1;
+        //FLAG_INPUT_FINISH=1;
     }
 
     return 0;
