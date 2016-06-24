@@ -10,7 +10,7 @@ typedef unsigned char byte;
 typedef unsigned short half;
 typedef unsigned long word;
 
-// calculate the basic data to use 
+// calculate the basic data to use
 #define TOTAL_BASE (1024 * 1024 * 1024)
 #define TOTAL_NUM (4)
 #define BLOCK_BIT (log2c(BLOCK_SIZE))
@@ -25,11 +25,11 @@ typedef unsigned long word;
 
 #define PAGE2_NUM (PAGE_SIZE / BLOCK_SIZE)
 
-// fat and data 
+// fat and data
 #define DISK ("disk.db")
-// the first class page 
+// the first class page
 #define MDISK ("mdisk.db")
-// the file Tree 
+// the file Tree
 #define FDISK ("fdisk.db")
 #define FILE_BLOCK (64)
 #define FILE_PNTLOC (sizeof(byte) * MAX_NAME_LENGTH + sizeof(word))
@@ -38,9 +38,9 @@ typedef unsigned long word;
 
 struct TimeRecord
 {
-  word index;
-  word time;
-  struct TimeRecord *Next;
+    word index;
+    word time;
+    struct TimeRecord *Next;
 };
 typedef struct TimeRecord TRecord;
 
@@ -58,48 +58,48 @@ int WriteBlock(char *name, word num, byte *block);
 
 
 
-// inner functions and inner variables 
+// inner functions and inner variables
 
-// the LRU data 
+// the LRU data
 extern TRecord *rHead, *rTail;
 extern int MemUse[TOTAL_BASE / BLOCK_SIZE * TOTAL_NUM]; //
 
-// buffer 
-// the second page for visible check 
+// buffer
+// the second page for visible check
 extern byte *page2v;
-// the second page for the location of PageBuffer 
+// the second page for the location of PageBuffer
 extern byte *page2t;
-// store the first class page 
+// store the first class page
 extern byte *PageBuffer;
-// store the data 
+// store the data
 extern byte *Buffer;
 extern word fileLoc;
 
-// free the buffer and store data to the memory 
+// free the buffer and store data to the memory
 void freeMemory();
-// initial Memory and load file Tree if existed 
+// initial Memory and load file Tree if existed
 void initMemory();
-// create database files 
+// create database files
 int createDataBase(void);
-// for LRU, return the least used Memory allocation 
+// for LRU, return the least used Memory allocation
 int LRU();
-// turn the virtual address to the memory address 
+// turn the virtual address to the memory address
 word getMemoryAddr(word addr);
-// followings are data operations 
+// followings are data operations
 byte lb(word addr);
 void sb(word addr, byte data);
 half lh(word addr);
 void sh(word addr, half data);
 word lw(word addr);
 void sw(word addr, word data);
-// find the expected block, like the block "num" of file "*name" 
+// find the expected block, like the block "num" of file "*name"
 word getFat(char *name, word num);
-// using deep first search to store and load files as follow functions 
+// using deep first search to store and load files as follow functions
 word dfsStore(FTree T, FILE *fp);
 int storeFile(FTree T);
 FTree dfsLoad(word fileAddr, FILE *fp);
 FTree loadFile(word fileAddr);
-// store the data in the buffer 
+// store the data in the buffer
 void storeMemory(FTree T);
 
 #endif

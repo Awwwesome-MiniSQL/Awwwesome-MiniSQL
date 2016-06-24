@@ -3,8 +3,8 @@
 
 #include "../MiniSQL.h"
 
-// calculate from fat to the real physical address 
-#define TRUEADDR(ADDR) ((ADDR) * BLOCK_SIZE + 0x20000)
+// calculate from fat to the real physical address
+#define TRUEADDR(ADDR) ((ADDR) *BLOCK_SIZE + 0x20000)
 
 typedef unsigned char byte;
 typedef unsigned short half;
@@ -12,9 +12,9 @@ typedef unsigned long word;
 
 struct FileTree
 {
-  char name[MAX_NAME_LENGTH];
-  word Addr;
-  struct FileTree *Left, *Right;
+    char name[MAX_NAME_LENGTH];
+    word Addr;
+    struct FileTree *Left, *Right;
 };
 typedef struct FileTree *FTree;
 
@@ -32,20 +32,20 @@ int RemoveIndexFromCatalog(char *tableName, int attributeNum, char *indexName);
 
 
 
-// the inner function 
+// the inner function
 
-// get a space from disk according to the fat table 
+// get a space from disk according to the fat table
 word findSpace();
-// create a file Tree Node 
+// create a file Tree Node
 FTree createFile(char *str);
-// find a Node named *str 
+// find a Node named *str
 FTree findFile(char *str, FTree T);
-// insert Node P 
+// insert Node P
 FTree insertFile(FTree P, FTree T);
 FTree findMin(FTree T);
-// delete Node P 
+// delete Node P
 FTree deleteFile(FTree P, FTree T);
-// free Tree 
+// free Tree
 void freeFile(FTree T);
 
 extern FTree THead;

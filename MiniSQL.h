@@ -8,14 +8,14 @@
 #define DEBUG
 #include <stdio.h>
 // three types of data, int, float, and string (the size of a string is between 0 and 255)
-enum DataType{intType, floatType, stringType};
+enum DataType {intType, floatType, stringType};
 struct AttributeRecord
 {
-    char name[MAX_NAME_LENGTH];  // the length of the name of attributes should be less than 16
+    char name[MAX_NAME_LENGTH]; // the length of the name of attributes should be less than 16
     enum DataType type;
-    int size;  // the size of the attribute, @NOTE '\0' should be counted
-    char unique;  // unique == 1 (the attribute is unique) or 0 (not unique)
-    int index;  // index name
+    int size; // the size of the attribute, @NOTE '\0' should be counted
+    char unique; // unique == 1 (the attribute is unique) or 0 (not unique)
+    int index; // index name
     char indexName[MAX_NAME_LENGTH]; // the new one for users
 };
 
@@ -24,11 +24,11 @@ struct TableRecord
 {
     char name[MAX_NAME_LENGTH];
 
-    int recordSize;  // the size of a tuple
-    int recordNum;  // the number of records in the table
-    int recordsPerBlock;  // the number of blocks of records in the file
+    int recordSize; // the size of a tuple
+    int recordNum; // the number of records in the table
+    int recordsPerBlock; // the number of blocks of records in the file
 
-    int primaryKey;  // the index of primary key
+    int primaryKey; // the index of primary key
     int attrNum;
     struct AttributeRecord attributes[MAX_ATTRIBUTE_NUM];
 };
