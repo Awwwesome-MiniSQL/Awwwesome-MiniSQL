@@ -38,4 +38,4 @@ main.o: main.c MiniSQL.h BPlusTree/BPlusTree.h interpreter.c
 	$(CC) $(CFLAGS) $(DEBUG) main.c
 
 clean:
-	rm -f $(OBJS) test
+	rm -f $(OBJS) MiniSQL
