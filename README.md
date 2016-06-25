@@ -65,7 +65,7 @@ select * from tableName;
 
 * insert
 ```sql
-insert into tableName (attrA, attrB, attrC) values (valueA, valueB, valueC);
+insert into tableName values (valueA, valueB, valueC);
 ```
 
 * delete
@@ -76,7 +76,7 @@ delete from tableName where attrA >= X and attrB < Y;
 
 * import SQL file
 ```sql
-source fileName.sql
+exec fileName.sql
 ```
 
 #### Detailed Specification
