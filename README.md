@@ -35,7 +35,7 @@ quit
 
 
 ### MiniSQL
-This MiniSQL project is maintained by [谢嘉豪](http://10.214.224.77:81/u/xjiajiahao), [陈源](http://10.214.224.77:81/u/chenyuan) and [张扬光](http://10.214.224.77:81/u/Yangguang.Zhang).
+This MiniSQL project is maintained by [Stephen Tse](https://github.com/xjiajiahao), [chenyuan]() and [Yangguang.Zhang]().
 
 #### Overview
 MiniSQL supports the following data types for an attribute:
@@ -43,9 +43,9 @@ MiniSQL supports the following data types for an attribute:
 * float
 * char(n), 1 <= n <= 255
 
-MiniSQL supports the following standard SQL statements.  
+MiniSQL supports the following standard SQL statements.
 Note that all SQL statements should **END WITH `;`** and **key words should be lowercase**.
-* create / drop table  
+* create / drop table
 ```sql
 create table tableName (attrA int, attrB float unique, attrC char(20), primary key(attrX));
 drop table tableName;
@@ -81,30 +81,24 @@ exec fileName.sql
 
 #### Detailed Specification
 MiniSQL consists of seven components:
-* `Interpreter`  
+* `Interpreter`
 Interpret SQL statements, invoke API and return results.
 
-* `API`   
+* `API`
 Provide APIs that execute SQL statements, connect `Interpreter` with other components.
 
-* `Record Manager`  
+* `Record Manager`
 Create / delete files, insert / delete / select tuples.
 
-* `Index Manager`  
+* `Index Manager`
 Create / delete B+ trees, insert / delete / select keys.
 
-* `Catalog Manager`  
+* `Catalog Manager`
 Access and manipulate meta-data of tables, attributes and indexes.
 
-* `Buffer Manager`  
+* `Buffer Manager`
 Read / write blocks, buffer replacement, record status and locks.
 
-* `DB Files`  
+* `DB Files`
 Catalog / data / index files.
 
-#### Duty Assignments
-* 陈源: `Interpreter`, `API` **Deadline: June 7, 2016**  
-
-* 张扬光: `Buffer Manager`, `Catalog Manager` **Deadline: June 7, 2016**
-
-* 谢嘉豪: `Index Manager`, `Record Manager` **Deadline: June 7, 2016**
