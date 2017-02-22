@@ -11,7 +11,7 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt-get update
 sudo apt-get install -y ncurses-dev libreadline6-dev gcc-4.9
 sudo ln -s /usr/bin/gcc-4.9 /usr/bin/gcc -f
-wget http://chenyuan.me/Awwwesome-MiniSQL.zip
+curl -o Awwwesome-MiniSQL.zip  https://codeload.github.com/Awwwesome-MiniSQL/Awwwesome-MiniSQL/zip/master
 unzip Awwwesome-MiniSQL.zip
 cd Awwwesome-MiniSQL
 make
